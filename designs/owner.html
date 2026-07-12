@@ -804,7 +804,7 @@ function homeTab(){
     <div class="card feature-card">
       <div class="card-head"><span class="card-head-title">Upcoming shifts</span><button class="see-all" data-quick="schedule">See all</button></div>
       <div class="list-wrap">
-      ${myShifts.length? myShifts.map(s=>`
+      ${myShifts.length? (APP_ROLE==='Employee'?myShifts.slice(0,3):myShifts).map(s=>`
         <div class="list-item"><span>${s.day}</span><span class="muted">${s.start} - ${s.end}</span></div>`).join('')
         : '<div class="empty">No shifts scheduled yet.</div>'}
       </div>
