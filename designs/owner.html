@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Store Ops</title>
+<style>
+  :root{
+    --primary:#4F6BED; --primary-dark:#3F57D6; --primary-light:#C7D2FA; --primary-tint:#EEF1FE;
+    --ink:#16181C; --paper:#F7F8FA; --card:#FFFFFF;
+    --slate:#8A8F98; --line:#F1F2F4;
+    --green:#12A150; --green-bg:#EAFBF1;
+    --amber:#E08C12; --amber-bg:#FFF6E9;
+    --red:#F1543F; --red-bg:#FEF3F2;
+    --shadow:0 4px 18px rgba(20,24,40,.055);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:"Hanken Grotesk",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:#E9ECF5; color:var(--ink); -webkit-tap-highlight-color:transparent;
+  }
+  #app{width:100%;max-width:390px; margin:0 auto; min-height:100vh; background:var(--paper); display:flex; flex-direction:column; box-shadow:0 0 40px rgba(20,24,40,.10);}
+  .header{background:var(--card); color:var(--ink); padding:16px 18px 14px; position:relative; border-bottom:1px solid var(--line);}
+  .header-row{display:flex; justify-content:space-between; align-items:center; position:relative; z-index:1;}
+  .brand-lockup{display:flex; align-items:center; gap:10px; min-width:0;}
+  .brand-mark{width:38px;height:38px;border-radius:13px;background:var(--primary);display:grid;place-items:center;color:#fff;box-shadow:0 6px 14px rgba(79,107,237,.22);flex:0 0 auto;}
+  .brand-mark svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .brand{font-weight:800; letter-spacing:-.35px; font-size:17px; color:var(--ink); line-height:1.1;}
+  .brand-sub{font-size:11px; color:var(--slate); margin-top:3px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;}
+  .account-area{display:flex;align-items:center;gap:9px;}
+  .bell-btn{width:36px;height:36px;border:0;border-radius:50%;background:#F2F3F6;color:#5B616B;display:grid;place-items:center;position:relative;}
+  .bell-btn::after{content:"";position:absolute;right:7px;top:7px;width:7px;height:7px;border-radius:50%;background:var(--red);border:2px solid #fff;}
+  .bell-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;}
+  .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(145deg,#C7D2FA,#EEF1FE);color:var(--primary-dark);display:grid;place-items:center;font-weight:800;font-size:13px;border:2px solid #fff;box-shadow:0 2px 8px rgba(20,24,40,.1);}
+  .role-chip{position:absolute;right:16px;top:64px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:7px 10px;font-size:11px;color:#5B616B;box-shadow:var(--shadow);z-index:5;display:none;}
+  .header:hover .role-chip,.role-chip:focus-within{display:flex;gap:6px;}
+  .role-chip button{background:none;border:none;color:var(--primary);font-weight:700;font-size:11px;cursor:pointer;padding:0;}
+  .content{flex:1; padding:20px 18px 104px; overflow-y:auto;}
+  .card{background:var(--card); border:1px solid rgba(241,242,244,.9); border-radius:18px; padding:17px 18px; margin-bottom:16px; box-shadow:var(--shadow);}
+  .filter-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 11px 2px;margin-bottom:12px;box-shadow:0 2px 10px rgba(20,24,40,.035);}
+  .filter-card .flex-gap{gap:7px;}
+  .filter-card .field{margin-bottom:8px;min-width:0;}
+  .filter-card label{font-size:10px;margin:0 0 3px 2px;}
+  .filter-card select{height:36px;padding:6px 27px 6px 9px;margin:0;border-radius:9px;font-size:11px;background-color:#F7F8FA;white-space:nowrap;text-overflow:ellipsis;}
+  .section-title{font-size:12px; letter-spacing:.15px; color:#5B616B; font-weight:700; margin:8px 2px 10px;}
+  .page-head{margin:2px 2px 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;}
+  .page-title{font-size:27px;line-height:1.05;letter-spacing:-.8px;font-weight:800;margin:0 0 5px;}
+  .page-subtitle{font-size:13px;color:var(--slate);margin:0;}
+  .eyebrow{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--primary);margin-bottom:6px;}
+  .greeting{margin:3px 2px 20px;}
+  .greeting h1{font-size:28px;line-height:1.08;letter-spacing:-.9px;margin:0 0 5px;font-weight:800;}
+  .greeting p{margin:0;color:var(--slate);font-size:13px;}
+  .quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px;}
+  .quick-tile{border:0;border-radius:17px;padding:14px 8px 12px;text-align:center;background:#fff;box-shadow:var(--shadow);color:var(--ink);font-family:inherit;cursor:pointer;min-width:0;}
+  .quick-icon{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;margin:0 auto 9px;}
+  .quick-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .quick-label{display:block;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ops-strip{display:flex;flex-direction:column;gap:11px;margin:0 0 22px;}
+  .ops-card{width:100%;border:0;border-radius:20px;padding:18px;background:#fff;box-shadow:var(--shadow);font-family:inherit;text-align:left;cursor:pointer;color:var(--ink);display:flex;align-items:center;gap:14px;}
+  .ops-card .quick-icon{margin:0;flex:0 0 auto;}
+  .ops-copy{min-width:0;flex:1;}
+  .ops-title{display:block;font-size:16px;font-weight:800;letter-spacing:-.2px;margin-bottom:3px;}
+  .ops-note{display:block;font-size:12px;color:var(--slate);}
+  .pending-count{min-width:58px;height:42px;padding:5px 9px;border-radius:13px;background:#FFF6E9;color:#C97708;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;font-weight:800;line-height:1;}
+  .pending-count small{font-size:8px;text-transform:uppercase;letter-spacing:.45px;margin-bottom:3px;}
+  .see-all{border:0;background:none;color:var(--primary);font:700 11px inherit;cursor:pointer;padding:5px 0;}
+  .tint-blue{background:#EEF1FE;color:#4F6BED}.tint-green{background:#EAFBF1;color:#12A150}.tint-amber{background:#FFF6E9;color:#E08C12}.tint-red{background:#FEF3F2;color:#F1543F}.tint-purple{background:#F1EEFE;color:#7C5CE0}.tint-cyan{background:#EAF6FF;color:#1B84D6}
+  .feature-card{padding:0;overflow:hidden;}
+  .feature-card .card-head{padding:17px 18px 12px;display:flex;align-items:center;justify-content:space-between;}
+  .card-head-title{font-size:15px;font-weight:800;letter-spacing:-.15px;}
+  .card-head-note{font-size:11px;color:var(--primary);font-weight:700;}
+  .feature-card .list-wrap{padding:0 18px 5px;}
+  .fab{position:fixed;bottom:94px;right:max(calc((100vw - 390px)/2 + 18px),18px);width:54px;height:54px;border:0;border-radius:18px;background:var(--primary);color:#fff;display:grid;place-items:center;box-shadow:0 10px 26px rgba(79,107,237,.34);font-size:28px;cursor:pointer;z-index:110;}
+  .fab.extended{width:auto;height:50px;padding:0 18px;border-radius:16px;display:flex;gap:8px;font-size:13px;font-weight:800;font-family:inherit;}
+  .fab.extended .plus{font-size:22px;line-height:1;font-weight:500;}
+  .sheet-overlay{position:fixed;inset:0;background:rgba(22,24,28,.46);backdrop-filter:blur(3px);z-index:220;display:flex;align-items:flex-end;justify-content:center;}
+  .bottom-sheet{background:#fff;width:100%;max-width:390px;border-radius:26px 26px 0 0;padding:10px 18px 22px;max-height:82vh;overflow:auto;overscroll-behavior:contain;box-shadow:0 -14px 50px rgba(20,24,40,.16);animation:sheetUp .22s ease-out;}
+  @keyframes sheetUp{from{transform:translateY(35px);opacity:.5}to{transform:translateY(0);opacity:1}}
+  .sheet-handle{width:42px;height:5px;border-radius:5px;background:#DEE1E6;margin:0 auto 18px;}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .sheet-title{font-size:21px;font-weight:800;letter-spacing:-.4px;}
+  .close-sheet{width:34px;height:34px;border:0;border-radius:50%;background:#F2F3F6;color:#5B616B;font-size:20px;cursor:pointer;}
+  .segment{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#F2F3F6;border-radius:12px;padding:4px;margin-bottom:14px;}
+  .segment label{margin:0;cursor:pointer;}
+  .segment input{position:absolute;opacity:0;pointer-events:none;}
+  .segment span{display:block;text-align:center;padding:9px;border-radius:9px;font-size:12px;font-weight:700;color:var(--slate);}
+  .segment input:checked+span{background:#fff;color:var(--primary);box-shadow:0 2px 8px rgba(20,24,40,.08);}
+  .audience-chip{display:inline-flex;align-items:center;gap:5px;background:var(--primary-tint);color:var(--primary-dark);border-radius:20px;padding:4px 8px;font-size:10px;font-weight:700;margin-top:7px;}
+  .audience-chip svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;}
+  .week-card{background:#fff;border-radius:18px;padding:14px;box-shadow:var(--shadow);margin-bottom:18px;}
+  .week-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .week-label{font-size:13px;font-weight:800;}
+  .week-reset{border:0;background:var(--primary-tint);color:var(--primary);border-radius:9px;padding:6px 9px;font:700 10px inherit;cursor:pointer;}
+  .week-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;}
+  .week-day{min-width:0;border:0;background:#fff;border-radius:12px;padding:11px 1px;color:var(--slate);font-family:inherit;cursor:pointer;text-align:center;box-shadow:0 4px 12px rgba(20,24,40,.035);}
+  .week-day span{display:block;font-size:10px;font-weight:800;margin:0;white-space:nowrap;}
+  .week-day strong{display:grid;place-items:center;width:28px;height:28px;margin:auto;border-radius:10px;font-size:12px;}
+  .week-day.today strong{background:var(--primary-tint);color:var(--primary);}
+  .week-day.selected{background:var(--primary);color:#fff;}
+  .week-day.selected strong{background:rgba(255,255,255,.18);color:#fff;}
+  .schedule-context{font-size:14px;color:var(--slate);margin:-10px 2px 18px;}
+  .schedule-timeline{display:flex;flex-direction:column;gap:9px;margin-top:8px;}
+  .timeline-row{display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:start;}
+  .timeline-time{padding-top:17px;color:#8A8F98;font-size:12px;font-weight:700;text-align:left;}
+  .shift-card{position:relative;background:#fff;border-radius:0 17px 17px 0;padding:14px 15px 13px 17px;box-shadow:var(--shadow);border-left:4px solid var(--primary);min-height:68px;}
+  .shift-card.is-past{border-left-color:#C4C9D0;}
+  .shift-card.is-now{border-left-color:var(--green);}
+  .shift-title{font-size:14px;font-weight:800;padding-right:46px;}
+  .shift-sub{font-size:12px;color:var(--slate);margin-top:4px;}
+  .now-pill{position:absolute;right:12px;top:13px;background:var(--green-bg);color:var(--green);border-radius:18px;padding:5px 8px;font-size:9px;font-weight:800;text-transform:uppercase;}
+  .shift-actions{margin-top:8px;display:flex;justify-content:flex-end;}
+  .clock-card{background:linear-gradient(145deg,#4F6BED,#4059D8);color:#fff;border-radius:22px;padding:22px;margin-bottom:15px;box-shadow:0 14px 30px rgba(79,107,237,.24);}
+  .clock-status{font-size:11px;text-transform:uppercase;letter-spacing:.7px;opacity:.78;font-weight:800;}
+  .clock-time{font-size:34px;font-weight:800;letter-spacing:-1px;margin:8px 0 3px;}
+  .clock-store{font-size:12px;opacity:.82;}
+  .clock-action{margin-top:18px;background:#fff;color:var(--primary);box-shadow:none;}
+  .clock-action.clocked{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35);}
+  .geo-note{display:flex;gap:8px;align-items:flex-start;font-size:11px;line-height:1.4;margin-top:12px;opacity:.8;}
+  .pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;}
+  .pay-stat{background:#fff;border-radius:16px;padding:15px;box-shadow:var(--shadow);}
+  .pay-stat span{display:block;font-size:10px;color:var(--slate);font-weight:700;margin-bottom:6px;}
+  .pay-stat strong{font-size:20px;letter-spacing:-.4px;}
+  .salary-summary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px;}
+  .salary-card{background:#fff;border-radius:17px;padding:15px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s;}
+  .salary-card:active{transform:scale(.99);}
+  .salary-meta{font-size:11px;color:var(--slate);line-height:1.5;margin-top:4px;}
+  .salary-amount{font-size:18px;font-weight:800;letter-spacing:-.3px;}
+  .status-filter{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#F2F3F6;border-radius:11px;padding:4px;margin-bottom:12px;}
+  .status-filter button{border:0;border-radius:8px;background:transparent;padding:7px 4px;color:var(--slate);font:700 10px inherit;cursor:pointer;}
+  .status-filter button.active{background:#fff;color:var(--primary);box-shadow:0 2px 7px rgba(20,24,40,.08);}
+  .employee-detail-head{display:flex;align-items:center;gap:12px;margin-bottom:17px;}
+  .employee-detail-avatar{width:50px;height:50px;border-radius:17px;background:var(--primary-tint);color:var(--primary);display:grid;place-items:center;font-size:16px;font-weight:800;}
+  .detail-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px;}
+  .detail-stat{background:#F7F8FA;border-radius:12px;padding:10px 7px;text-align:center;}
+  .detail-stat span{display:block;font-size:8px;color:var(--slate);text-transform:uppercase;font-weight:800;margin-bottom:4px;}
+  .detail-stat strong{font-size:13px;}
+  .list-item.team-row{position:relative;display:block;width:100%;cursor:pointer;padding-right:2px;user-select:none;}
+  .kebab-btn{width:34px;height:34px;border:0;border-radius:11px;background:#F2F3F6;color:#5B616B;font-size:22px;line-height:1;cursor:pointer;display:grid;place-items:center;}
+  .team-action-menu{position:static;width:100%;margin-top:11px;background:#F7F8FA;border:1px solid var(--line);border-radius:13px;padding:5px;box-shadow:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;}
+  .team-action-menu button{display:block;width:100%;min-width:0;border:0;background:#fff;border-radius:9px;padding:9px 10px;text-align:left;color:var(--ink);font:700 11px inherit;cursor:pointer;}
+  .team-action-menu button:hover{background:#F7F8FA;}
+  .team-action-menu button.danger-option{color:var(--red);}
+  h2{font-size:22px; line-height:1.15; letter-spacing:-.35px; font-weight:800; margin:0 0 7px; color:var(--ink);}
+  .muted{color:var(--slate); font-size:13px; line-height:1.45;}
+  .row{display:flex; justify-content:space-between; align-items:center;}
+  .btn{
+    background:var(--primary); color:#fff; border:none; border-radius:12px; padding:12px 16px;
+    font-weight:700; font-size:14px; cursor:pointer; width:100%; box-shadow:0 4px 12px rgba(79,107,237,.18); transition:transform .15s, background .15s;
+  }
+  .btn:active{transform:scale(.985);}
+  .btn.secondary{background:#F7F8FA; color:#3A3F47; border:1px solid #EAECF0; box-shadow:none;}
+  .btn.small{width:auto; padding:7px 11px; font-size:11px; border-radius:9px;}
+  .btn.danger{background:var(--red);}
+  input, select, textarea{
+    width:100%; padding:12px 13px; border:1px solid #DEE1E6; border-radius:12px;
+    font-size:14px; background:#fff; color:var(--ink); font-family:inherit; margin-bottom:10px; transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus, textarea:focus{outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-tint);}
+  label{font-size:12px; color:var(--slate); font-weight:600; display:block; margin-bottom:4px;}
+  .field{margin-bottom:12px;}
+  .badge{font-size:10px; font-weight:800; padding:5px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:0.35px;}
+  .badge.pending{background:var(--amber-bg); color:var(--amber);}
+  .badge.approved, .badge.paid{background:var(--green-bg); color:var(--green);}
+  .badge.resolved{background:var(--green-bg); color:var(--green);}
+  .list-item{display:flex; justify-content:space-between; align-items:center; padding:13px 0; border-bottom:1px solid var(--line);}
+  .list-item:last-child{border-bottom:none;}
+  .tabbar{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:390px;
+    background:rgba(255,255,255,.97); border-top:1px solid var(--line); display:flex; padding:8px 6px 10px; backdrop-filter:blur(16px); z-index:100;
+  }
+  .tab{flex:1; text-align:center; background:none; border:none; border-radius:13px; padding:6px 2px; cursor:pointer; color:#A2A8B2;}
+  .tab.active{color:var(--primary-dark);}
+  .tab.active .tab-icon{background:var(--primary-tint);}
+  .tab-icon{line-height:30px; width:38px; height:30px; border-radius:12px; display:grid;place-items:center; margin:0 auto 2px;}
+  .tab-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  .tab-label{font-size:10px; font-weight:700;}
+  .empty{text-align:center; padding:30px 10px; color:var(--slate); font-size:13px;}
+  .qty-control{display:flex; align-items:center; gap:8px;}
+  .qty-btn{width:30px; height:30px; border-radius:9px; border:0; background:var(--primary-tint); color:var(--primary-dark); font-size:16px; font-weight:700; cursor:pointer;}
+  .login-wrap{display:flex; align-items:center; justify-content:center; min-height:100vh; padding:26px; background:linear-gradient(155deg,#E8EDFF 0%,var(--paper) 48%,#fff 100%); position:relative; overflow:hidden;}
+  .login-wrap::before{content:""; position:absolute; width:250px; height:250px; border-radius:50%; background:var(--primary); opacity:.08; top:-110px; right:-100px;}
+  .login-card{background:#fff; border-radius:24px; padding:30px 25px; width:100%; max-width:360px; border:1px solid rgba(255,255,255,.8); box-shadow:0 18px 50px rgba(45,57,112,.12); position:relative; z-index:1;}
+  .auth-screen{display:block;min-height:100vh;padding:72px 24px 44px;background:#F3F5F9;position:relative;overflow-y:auto;}
+  .auth-brand{text-align:center;margin-bottom:34px;}
+  .auth-logo{width:78px;height:78px;border-radius:24px;background:linear-gradient(145deg,#6C83F3,#4F6BED);color:#fff;display:grid;place-items:center;margin:0 auto 20px;box-shadow:0 14px 32px rgba(79,107,237,.24);}
+  .auth-logo svg{width:38px;height:38px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .auth-brand h1{font-size:30px;letter-spacing:-.9px;margin:0 0 6px;font-weight:800;}
+  .auth-brand p{margin:0;color:#A2A8B2;font-size:13px;}
+  .auth-form-card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 14px 40px rgba(20,24,40,.07);margin-bottom:18px;}
+  .auth-field{margin-bottom:17px;}
+  .auth-field:last-child{margin-bottom:0;}
+  .auth-field label{font-size:11px;text-transform:uppercase;letter-spacing:.45px;margin:0 0 8px 2px;color:#8A8F98;font-weight:800;}
+  .auth-input{position:relative;}
+  .auth-input svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;fill:none;stroke:#A2A8B2;stroke-width:2;pointer-events:none;}
+  .auth-input input{margin:0;background:#F3F5F9;border:0;border-radius:14px;padding:14px 14px 14px 44px;height:52px;}
+  .auth-signin{height:54px;border-radius:17px;font-size:16px;}
+  .auth-link{display:block;margin:18px auto 0;border:0;background:none;color:var(--primary);font:700 13px inherit;cursor:pointer;}
+  .invite-link{color:var(--slate);font-weight:600;margin-top:26px;}
+  .toast{
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff;
+    padding:11px 18px; border-radius:12px; font-size:13px; font-weight:600; z-index:150; opacity:0; transition:opacity .2s;
+    max-width:90%; text-align:center;
+  }
+  .toast.show{opacity:1;}
+  .divider{border:none; border-top:1px solid var(--line); margin:12px 0;}
+  .flex-gap{display:flex; gap:8px;}
+  .flex-gap > *{flex:1;}
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(22,24,28,.52); backdrop-filter:blur(4px); display:flex; align-items:center;
+    justify-content:center; z-index:200; padding:20px;
+  }
+  .modal-card{
+    background:#fff; border-radius:22px; padding:22px; max-width:360px; width:100%;
+    max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(20,24,40,.20);
+  }
+  .modal-card h3{margin:0 0 6px; font-size:17px; font-weight:800; color:var(--ink);}
+  @media (max-width:519px){
+    #app,.tabbar{max-width:none;}
+    .fab{right:18px;}
+  }
+  @media (min-width:520px){
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:#E5E7EB;}
+    #app{
+      position:relative;width:390px;height:min(844px,calc(100vh - 32px));min-height:0;margin:0;
+      padding-top:46px;border-radius:48px;overflow:hidden;border:2px solid #BFC3CA;
+      box-shadow:0 28px 70px rgba(20,24,40,.22),inset 0 0 0 1px rgba(255,255,255,.75);
+    }
+    #app::before{
+      content:"";position:absolute;z-index:1000;top:14px;left:50%;transform:translateX(-50%);
+      width:126px;height:34px;border-radius:22px;background:#050505;
+      box-shadow:0 4px 12px rgba(0,0,0,.2);
+    }
+    .auth-screen{min-height:100%;height:100%;padding-top:38px;}
+    .tabbar{bottom:max(16px,calc((100vh - 844px)/2));border-radius:0 0 46px 46px;}
+    .fab{bottom:max(94px,calc((100vh - 844px)/2 + 78px));}
+    .sheet-overlay{
+      inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);
+      width:390px;height:min(844px,calc(100vh - 32px));border-radius:48px;overflow:hidden;
+    }
+    .bottom-sheet{max-height:min(690px,calc(100vh - 150px));padding:9px 17px 20px;}
+  }
+</style>
+</head>
+<body>
+<div id="app"><div class="empty">Loading store ops...</div></div>
+
+<script>
+const KEYS = { roster:'roster', catalog:'catalog', orders:'orders', payouts:'payouts', schedule:'schedule', announcements:'announcements', loginSecurity:'loginSecurity', requests:'requests', inviteCodes:'inviteCodes', timeEntries:'timeEntries', salaries:'salaries' };
+const APP_ROLE = ['Owner','Manager','Employee'].includes(new URLSearchParams(location.search).get('appRole')) ? new URLSearchParams(location.search).get('appRole') : 'Owner';
+const STORAGE_PREFIX = `metro_${APP_ROLE.toLowerCase()}_`;
+function defaultLogin(){
+  if(APP_ROLE==='Manager') return {name:'Store Manager',email:'manager@metrostore.com',phone:'555-0200',password:'Manager123',role:'Manager',employeeId:'MGR-100',area:'Central Area',store:'Metro Downtown',hourlyRate:28};
+  if(APP_ROLE==='Employee') return {name:'Store Employee',email:'employee@metrostore.com',phone:'555-0300',password:'Employee123',role:'Employee',employeeId:'EMP-100',area:'Central Area',store:'Metro Downtown',hourlyRate:18};
+  return {name:'Metro Owner',email:'owner@metrostore.com',phone:'555-0100',password:'Metro123',role:'Owner',employeeId:'OWNER-1',area:'Central Area',store:'Metro Downtown'};
+}
+let state = { user:null, tab:'home', data:{}, cart:{}, loaded:false, permEditFor:null, authView:'login', modal:null, announcementComposer:false, shiftComposer:false, requestComposer:false, catalogComposer:false, payoutComposer:false, teamComposer:false, salaryDetailId:null, teamDetailName:null, teamMenuFor:null, catalogAreaFilter:'All areas', catalogStoreFilter:'All stores', payoutAreaFilter:'All areas', payoutStoreFilter:'All stores', requestAreaFilter:'All areas', requestStoreFilter:'All stores', scheduleAreaFilter:'Central Area', scheduleStoreFilter:'Metro Downtown', scheduleDayFilter:null, teamAreaFilter:'All areas', teamStoreFilter:'All stores', salariesAreaFilter:'All areas', salariesStoreFilter:'All stores', salariesStatusFilter:'all' };
+const PERMISSION_DEFS = [
+  {key:'canApproveOrders', label:'Approve accessory orders'},
+  {key:'canManageCatalog', label:'Manage the accessory catalog'},
+  {key:'canPublishSchedule', label:'Publish and edit the schedule'},
+  {key:'canManageMaintenance', label:'Review requirement and maintenance requests'},
+  {key:'canPostAnnouncements', label:'Post announcements'},
+  {key:'canEditRoster', label:"Edit employee names and roles"},
+  {key:'canInviteEmployees', label:'Generate employee invite codes'}
+];
+function defaultPermissions(){
+  const p = {}; PERMISSION_DEFS.forEach(d=>p[d.key]=true); return p;
+}
+function genInviteCode(existing){
+  let code;
+  do{ code = Math.random().toString(36).slice(2,8).toUpperCase(); }
+  while(existing.find(c=>c.code===code));
+  return code;
+}
+
+async function sget(key, fallback){
+  try{ const r = await window.storage.get(STORAGE_PREFIX+key, true); return r ? JSON.parse(r.value) : fallback; }
+  catch(e){ return fallback; }
+}
+async function sset(key, value){
+  try{ await window.storage.set(STORAGE_PREFIX+key, JSON.stringify(value), true); }catch(e){ console.error('storage set failed', e); }
+}
+async function personalGet(key, fallback){
+  try{ const r = await window.storage.get(STORAGE_PREFIX+key, false); return r ? JSON.parse(r.value) : fallback; }
+  catch(e){ return fallback; }
+}
+async function personalSet(key, value){
+  try{ await window.storage.set(STORAGE_PREFIX+key, JSON.stringify(value), false); }catch(e){}
+}
+async function resetAllData(){
+  await sset(KEYS.roster, []);
+  await sset(KEYS.orders, []);
+  await sset(KEYS.payouts, []);
+  await sset(KEYS.schedule, []);
+  await sset(KEYS.announcements, []);
+  await sset(KEYS.loginSecurity, {});
+  await sset(KEYS.requests, []);
+  await sset(KEYS.inviteCodes, []);
+  await sset(KEYS.timeEntries, []);
+  await sset(KEYS.salaries, []);
+  await personalSet('lastUser', null);
+}
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function money(n){ return '$' + (Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+async function hashPassword(pw){
+  const enc = new TextEncoder().encode(pw);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+const LOCKOUT_MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 5*60*1000;
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if(!t){ t = document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 4000);
+}
+
+async function loadAll(){
+  state.data.roster = await sget(KEYS.roster, []);
+  if(!state.data.roster.find(r=>r.role==='Owner')){
+    state.data.roster.push({
+      name:'Metro Owner', email:'owner@metrostore.com', phone:'555-0100',
+      password:await hashPassword('Metro123'), role:'Owner', employeeId:'OWNER-1',
+      area:'Central Area', store:'Metro Downtown',
+      securityQuestion:'What city were you born in?',
+      securityAnswerHash:await hashPassword('metro')
+    });
+    await sset(KEYS.roster,state.data.roster);
+  }
+  const login=defaultLogin();
+  if(!state.data.roster.find(r=>r.email===login.email)){
+    const entry={...login,password:await hashPassword(login.password)};
+    if(login.role==='Manager') entry.permissions=defaultPermissions();
+    state.data.roster.push(entry);
+    await sset(KEYS.roster,state.data.roster);
+  }
+  if(APP_ROLE==='Owner'||APP_ROLE==='Manager'){
+    const samplePassword=await hashPassword('Employee123');
+    const sampleMembers=[
+      {name:'Jordan Smith',email:'jordan@metrostore.com',phone:'555-014-1042',employeeId:'EMP-1042',role:'Employee',area:'Central Area',store:'Metro Downtown',hourlyRate:18},
+      {name:'Taylor Reed',email:'taylor@metrostore.com',phone:'555-014-1068',employeeId:'EMP-1068',role:'Employee',area:'Central Area',store:'Metro Midtown',hourlyRate:20},
+      {name:'Alex Morgan',email:'alex@metrostore.com',phone:'555-014-1104',employeeId:'EMP-1104',role:'Employee',area:'North Area',store:'Metro North',hourlyRate:18},
+      {name:'Sam Wilson',email:'sam@metrostore.com',phone:'555-014-1121',employeeId:'EMP-1121',role:'Manager',area:'East Area',store:'Metro East',hourlyRate:19,permissions:defaultPermissions()}
+    ];
+    let rosterChanged=false;
+    sampleMembers.filter(member=>APP_ROLE==='Owner'||member.area===defaultLogin().area).forEach(member=>{if(!state.data.roster.find(r=>r.email===member.email)){state.data.roster.push({...member,password:samplePassword});rosterChanged=true;}});
+    if(rosterChanged) await sset(KEYS.roster,state.data.roster);
+  }
+  state.data.catalog = await sget(KEYS.catalog, [
+    {id:uid(), name:'Phone case - clear', price:12.99, category:'Cases'},
+    {id:uid(), name:'Tempered glass screen protector', price:9.99, category:'Screen protection'},
+    {id:uid(), name:'20W USB-C wall charger', price:14.99, category:'Chargers'},
+    {id:uid(), name:'6ft USB-C cable', price:7.99, category:'Cables'},
+    {id:uid(), name:'Wireless earbuds', price:24.99, category:'Audio'}
+  ]);
+  state.data.orders = await sget(KEYS.orders, []);
+  state.data.payouts = await sget(KEYS.payouts, []);
+  state.data.schedule = await sget(KEYS.schedule, []);
+  let scheduleSeeded=false;
+  currentWeekDates().forEach((sampleDay,dayIndex)=>{
+    if(state.data.schedule.some(s=>s.day===sampleDay&&s.area==='Central Area'&&s.store==='Metro Downtown')) return;
+    const employeeName=APP_ROLE==='Employee'?'Store Employee':['Jordan Smith','Taylor Reed','Alex Morgan'][dayIndex%3];
+    state.data.schedule.push(
+      {id:uid(),employee:employeeName,area:'Central Area',store:'Metro Downtown',day:sampleDay,start:'09:00',end:'11:00',demo:true},
+      {id:uid(),employee:APP_ROLE==='Employee'?'Store Employee':'Taylor Reed',area:'Central Area',store:'Metro Downtown',day:sampleDay,start:'11:30',end:'13:30',demo:true},
+      {id:uid(),employee:APP_ROLE==='Employee'?'Store Employee':'Alex Morgan',area:'Central Area',store:'Metro Downtown',day:sampleDay,start:'14:00',end:'17:00',demo:true}
+    );
+    scheduleSeeded=true;
+  });
+  if(scheduleSeeded){
+    await sset(KEYS.schedule,state.data.schedule);
+  }
+  state.data.announcements = await sget(KEYS.announcements, []);
+  state.data.loginSecurity = await sget(KEYS.loginSecurity, {});
+  state.data.requests = await sget(KEYS.requests, []);
+  state.data.inviteCodes = await sget(KEYS.inviteCodes, []);
+  state.data.timeEntries = await sget(KEYS.timeEntries, []);
+  state.data.salaries = await sget(KEYS.salaries, []);
+  if(APP_ROLE==='Owner'&&!state.data.salaries.length){
+    state.data.salaries=[
+      {id:uid(),employee:'Jordan Smith',area:'Central Area',store:'Metro Downtown',period:'Jun 29 – Jul 12',hours:78,rate:18,amount:1404,status:'pending'},
+      {id:uid(),employee:'Taylor Reed',area:'Central Area',store:'Metro Midtown',period:'Jun 29 – Jul 12',hours:80,rate:20,amount:1600,status:'paid',paidDate:todayStr()},
+      {id:uid(),employee:'Alex Morgan',area:'North Area',store:'Metro North',period:'Jun 29 – Jul 12',hours:74.5,rate:18,amount:1341,status:'pending'},
+      {id:uid(),employee:'Sam Wilson',area:'East Area',store:'Metro East',period:'Jun 29 – Jul 12',hours:82,rate:19,amount:1558,status:'paid',paidDate:todayStr()}
+    ];
+    await sset(KEYS.salaries,state.data.salaries);
+  }
+  state.loaded = true;
+}
+
+function isAdmin(){ return state.user && (state.user.role === 'Owner' || state.user.role === 'Manager'); }
+function isOwner(){ return state.user && state.user.role === 'Owner'; }
+function getMyRosterEntry(){
+  if(!state.user) return null;
+  return (state.data.roster||[]).find(r=> state.user.phone ? r.phone===state.user.phone : r.name===state.user.name);
+}
+function hasPermission(key){
+  if(isOwner()) return true;
+  if(!state.user || state.user.role !== 'Manager') return false;
+  const entry = getMyRosterEntry();
+  if(!entry || !entry.permissions) return true;
+  return entry.permissions[key] !== false;
+}
+
+function roleScope(){
+  const entry=getMyRosterEntry()||defaultLogin();
+  return {area:entry.area||'Central Area',store:entry.store||'Metro Downtown'};
+}
+function syncRoleLocationFilters(){
+  if(APP_ROLE==='Owner') return;
+  const scope=roleScope();
+  ['catalog','payout','request','schedule','team'].forEach(prefix=>{
+    state[`${prefix}AreaFilter`]=scope.area;
+    if(APP_ROLE==='Employee') state[`${prefix}StoreFilter`]=scope.store;
+    else if(!storesForArea(scope.area).includes(state[`${prefix}StoreFilter`])||state[`${prefix}StoreFilter`]==='All stores') state[`${prefix}StoreFilter`]=scope.store;
+  });
+}
+function locationFilterCard(prefix,areaValue,storeValue,strict=false){
+  if(APP_ROLE==='Employee') return '';
+  if(APP_ROLE==='Manager') return `<div class="filter-card"><div class="field"><label>Store</label><select id="${prefix}StoreFilter">${locationOptions(storesForArea(roleScope().area),storeValue)}</select></div></div>`;
+  const areas=strict?areaNames():['All areas',...areaNames()];
+  const stores=strict?storesForArea(areaValue):['All stores',...storeNamesForFilter(areaValue)];
+  return `<div class="filter-card"><div class="flex-gap"><div class="field"><label>Area</label><select id="${prefix}AreaFilter">${locationOptions(areas,areaValue)}</select></div><div class="field"><label>Store</label><select id="${prefix}StoreFilter">${locationOptions(stores,storeValue)}</select></div></div></div>`;
+}
+function locationEntryFields(areaId,storeId,area='Central Area',store='Metro Downtown'){
+  const scope=roleScope();
+  if(APP_ROLE==='Employee') return `<input type="hidden" id="${areaId}" value="${scope.area}"><input type="hidden" id="${storeId}" value="${scope.store}">`;
+  if(APP_ROLE==='Manager') return `<input type="hidden" id="${areaId}" value="${scope.area}"><div class="field"><label>Store</label><select id="${storeId}">${locationOptions(storesForArea(scope.area),scope.store)}</select></div>`;
+  return `<div class="field"><label>Area</label><select id="${areaId}">${locationOptions(areaNames(),area)}</select></div><div class="field"><label>Store</label><select id="${storeId}">${locationOptions(storesForArea(area),store)}</select></div>`;
+}
+function requestAssignmentFields(){
+  const scope=roleScope();
+  if(APP_ROLE==='Employee') return `<input type="hidden" name="reqAssignment" value="Store" checked><input type="hidden" id="reqStore" value="${scope.store}"><input type="hidden" id="reqArea" value="${scope.area}">`;
+  if(APP_ROLE==='Manager') return `<input type="hidden" name="reqAssignment" value="Store" checked><input type="hidden" id="reqArea" value="${scope.area}"><div class="field"><label>Assign to store</label><select id="reqStore">${locationOptions(storesForArea(scope.area),scope.store)}</select></div>`;
+  return `<div class="field"><label>Assign request</label><div class="segment"><label><input type="radio" name="reqAssignment" value="Store" checked><span>By store</span></label><label><input type="radio" name="reqAssignment" value="Area"><span>By area</span></label></div></div><div class="field" id="requestStoreField"><label>Choose store</label><select id="reqStore"><option>Metro Downtown</option><option>Metro North</option><option>Metro East</option><option>Metro West</option></select></div><div class="field" id="requestAreaField" style="display:none;"><label>Choose area</label><select id="reqArea">${locationOptions(areaNames(),'Central Area')}</select></div>`;
+}
+
+async function init(){
+  const lastUser = await personalGet('lastUser', null);
+  await loadAll();
+  if(lastUser) state.user = lastUser;
+  render();
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if(!state.loaded){ app.innerHTML = '<div class="empty">Loading store ops...</div>'; return; }
+  if(!state.user){ app.innerHTML = loginScreen() + renderModal(); attachLoginHandlers(); attachModalHandlers(); return; }
+  syncRoleLocationFilters();
+  app.innerHTML = `
+    ${state.tab==='home'?`
+    <div class="header">
+      <div class="header-row">
+        <div class="brand-lockup">
+          <div class="brand-mark">${uiIcon('store')}</div>
+          <div>
+            <div class="brand">Metro Store Ops</div>
+            <div class="brand-sub">${state.user.role} workspace</div>
+          </div>
+        </div>
+        <div class="account-area">
+          <button class="bell-btn" aria-label="Updates">${uiIcon('bell')}</button>
+          <button class="avatar" id="accountBtn" title="${escapeHtml(state.user.name)}" aria-label="Open account menu">${initials(state.user.name)}</button>
+        </div>
+        <div class="role-chip">${escapeHtml(state.user.name)} · ${state.user.role}<button id="logoutBtn">Switch</button></div>
+      </div>
+    </div>
+    `:''}
+    <div class="content" id="content"></div>
+    <div class="tabbar">
+      ${tabButton('home','Home')}
+      ${tabButton('schedule','Schedule')}
+      ${!isOwner() ? tabButton('time','Time') : ''}
+      ${isAdmin() ? tabButton('team','Team') : ''}
+      ${isOwner() ? tabButton('salaries','Salaries') : ''}
+      ${tabButton('settings','Settings')}
+    </div>
+    ${renderModal()}
+  `;
+  const logoutBtn=document.getElementById('logoutBtn');
+  if(logoutBtn) logoutBtn.onclick = ()=>{ state.user = null; personalSet('lastUser', null); render(); };
+  const accountBtn=document.getElementById('accountBtn');
+  if(accountBtn) accountBtn.onclick = ()=>{
+    const menu=document.querySelector('.role-chip');
+    menu.style.display=menu.style.display==='flex'?'none':'flex';
+  };
+  document.querySelectorAll('.tab').forEach(el=>{
+    el.onclick = ()=>{ state.tab = el.dataset.tab; render(); };
+  });
+  const content = document.getElementById('content');
+  if(state.tab==='home') content.innerHTML = homeTab();
+  else if(state.tab==='catalog') content.innerHTML = pageIntro('Catalog','Order and manage store accessories') + catalogTab();
+  else if(state.tab==='payouts') content.innerHTML = pageIntro('Payouts','Track pay, commissions and bonuses') + payoutsTab();
+  else if(state.tab==='schedule') content.innerHTML = pageIntro('Schedule','Plan and review team shifts') + scheduleTab();
+  else if(state.tab==='requests') content.innerHTML = pageIntro('Requests','Submit and resolve store needs') + requestsTab();
+  else if(state.tab==='team') content.innerHTML = pageIntro('Team','People, roles and access') + teamTab();
+  else if(state.tab==='announcements') content.innerHTML = pageIntro('Announcements','Updates shared with stores and areas') + announcementsTab();
+  else if(state.tab==='settings') content.innerHTML = pageIntro('Settings','Account and security preferences') + settingsTab();
+  else if(state.tab==='time') content.innerHTML = pageIntro('Time & Pay','Clock in and review your biweekly pay') + timeTab();
+  else if(state.tab==='salaries') content.innerHTML = pageIntro('Employee Salaries','Biweekly payroll status by location') + salariesTab();
+  document.querySelectorAll('[data-quick]').forEach(el=>{ el.onclick=()=>{state.tab=el.dataset.quick;render();}; });
+  attachTabHandlers();
+  attachModalHandlers();
+}
+
+function tabButton(key, label){
+  return `<button class="tab ${state.tab===key?'active':''}" data-tab="${key}">
+    <span class="tab-icon">${uiIcon(key)}</span><span class="tab-label">${label}</span>
+  </button>`;
+}
+
+function initials(name){ return escapeHtml((name||'U').split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()); }
+function pageIntro(title, subtitle){ return `<div class="page-head"><div><h1 class="page-title">${title}</h1><p class="page-subtitle">${subtitle}</p></div></div>`; }
+function uiIcon(key){
+  const paths={
+    store:'<path d="M3 10h18M5 10v10h14V10M4 4h16l1 6H3l1-6Z"/><path d="M8 20v-6h4v6"/>',
+    bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+    home:'<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/>',
+    catalog:'<path d="M6 7h15l-2 8H8L6 3H3"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/>',
+    payouts:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M17 14h.01M12 9v6M10 11h3a1 1 0 0 1 0 2h-3"/>',
+    schedule:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>',
+    requests:'<path d="M14.7 6.3a4 4 0 0 0-5-5L12 3.6 3.6 12l-2.3-.3a4 4 0 0 0 5 5l8.4-8.4 2.3 2.3a4 4 0 0 0 5-5l-2.3 2.3-2.4-2.4 2.3-2.3"/>',
+    team:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+    announcements:'<path d="M3 11v2a2 2 0 0 0 2 2h2l4 4V5L7 9H5a2 2 0 0 0-2 2Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/>',
+    mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+    time:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    location:'<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
+    salaries:'<path d="M3 7h18v12H3z"/><path d="M7 11h.01M17 15h.01M12 10v6M10 12h3a1 1 0 0 1 0 2h-3"/>',
+    settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.5-1H3v-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.5V3h4v.1A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.5 1h.1v4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>'
+  };
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[key]||paths.home}</svg>`;
+}
+
+function loginScreen(){
+  const roster = state.data.roster || [];
+  const noOwnerYet = !roster.find(r=>r.role==='Owner');
+  if(noOwnerYet){
+    return `
+    <div class="login-wrap">
+      <div class="login-card">
+        <h2 style="margin-bottom:2px;">Create owner account</h2>
+        <p class="muted" style="margin-top:0;">No owner account exists yet. Set one up to get started &mdash; you'll add employees and managers afterward.</p>
+        <div class="field"><label>Your name</label><input id="setupName" placeholder="e.g. Jordan Smith"></div>
+        <div class="field"><label>Email</label><input id="setupEmail" type="email" placeholder="name@example.com"></div>
+        <div class="field"><label>Phone number</label><input id="setupPhone" type="tel" placeholder="(555) 123-4567"></div>
+        <div class="field"><label>Password</label><input id="setupPassword" type="password" placeholder="Create a password"></div>
+        <div class="field">
+          <label>Security question (for password recovery)</label>
+          <select id="setupSecurityQuestion">
+            <option value="What was the name of your first pet?">What was the name of your first pet?</option>
+            <option value="What city were you born in?">What city were you born in?</option>
+            <option value="What was your childhood best friend's name?">What was your childhood best friend's name?</option>
+            <option value="What was the make of your first car?">What was the make of your first car?</option>
+            <option value="custom">Write my own question</option>
+          </select>
+        </div>
+        <div class="field" id="customQuestionWrap" style="display:none;">
+          <label>Your custom question</label>
+          <input id="setupCustomQuestion" placeholder="Enter your own question">
+        </div>
+        <div class="field"><label>Answer</label><input id="setupSecurityAnswer" placeholder="Your answer"></div>
+        <button class="btn" id="setupOwnerBtn">Create owner account</button>
+        <p class="muted" style="font-size:11px; margin-top:14px; text-align:center;">Passwords are hashed (SHA-256) before they're stored, and failed logins are rate-limited. Still not full production-grade security &mdash; a real backend with server-side auth is the next step for that.</p>
+      </div>
+    </div>`;
+  }
+  if(state.authView==='signup'){
+    return `
+    <div class="login-wrap">
+      <div class="login-card">
+        <h2 style="margin-bottom:2px;">Employee sign up</h2>
+        <p class="muted" style="margin-top:0;">Enter the invite code your owner or manager gave you.</p>
+        <div class="field"><label>Invite code</label><input id="signupCode" placeholder="e.g. 8FQ2LX" style="text-transform:uppercase;"></div>
+        <div class="field"><label>Your name</label><input id="signupName" placeholder="e.g. Jordan Smith"></div>
+        <div class="field"><label>Phone number</label><input id="signupPhone" type="tel" placeholder="(555) 123-4567"></div>
+        <div class="field"><label>Password</label><input id="signupPassword" type="password" placeholder="Create a password"></div>
+        <button class="btn" id="signupBtn">Create my account</button>
+        <button class="btn secondary" id="backToLoginBtn" style="margin-top:8px;">Back to sign in</button>
+      </div>
+    </div>`;
+  }
+  if(state.authView==='recoverPhone'){
+    return `
+    <div class="login-wrap">
+      <div class="login-card">
+        <h2 style="margin-bottom:2px;">Reset password</h2>
+        <p class="muted" style="margin-top:0;">Enter the phone number on the account.</p>
+        <div class="field"><label>Phone number</label><input id="recoverPhone" type="tel" placeholder="(555) 123-4567"></div>
+        <button class="btn" id="recoverFindBtn">Continue</button>
+        <button class="btn secondary" id="backToLoginBtn" style="margin-top:8px;">Back to sign in</button>
+      </div>
+    </div>`;
+  }
+  if(state.authView==='recoverAnswer'){
+    return `
+    <div class="login-wrap">
+      <div class="login-card">
+        <h2 style="margin-bottom:2px;">Reset password</h2>
+        <p class="muted" style="margin-top:0;">${escapeHtml(state.recoverQuestion)}</p>
+        <div class="field"><label>Answer</label><input id="recoverAnswer" placeholder="Your answer"></div>
+        <div class="field"><label>New password</label><input id="recoverNewPassword" type="password" placeholder="At least 6 characters"></div>
+        <div class="field"><label>Confirm new password</label><input id="recoverConfirmPassword" type="password" placeholder="Retype new password"></div>
+        <button class="btn" id="recoverResetBtn">Reset password</button>
+        <button class="btn secondary" id="backToLoginBtn" style="margin-top:8px;">Back to sign in</button>
+      </div>
+    </div>`;
+  }
+  return `
+  <div class="auth-screen">
+    <div class="auth-brand">
+      <div class="auth-logo">${uiIcon('store')}</div>
+      <h1>Metro Store Ops</h1>
+      <p>Dealer operations workspace</p>
+    </div>
+    <div class="auth-form-card">
+      <div class="auth-field"><label>Email</label><div class="auth-input">${uiIcon('mail')}<input id="loginPhone" type="text" inputmode="email" value="${defaultLogin().email}" placeholder="name@example.com"></div></div>
+      <div class="auth-field"><label>Password</label><div class="auth-input">${uiIcon('lock')}<input id="loginPassword" type="password" value="${defaultLogin().password}" placeholder="Enter your password"></div></div>
+    </div>
+    <button class="btn auth-signin" id="loginBtn">Sign in</button>
+    <button class="auth-link" id="showRecoverBtn">Forgot password?</button>
+  </div>`;
+}
+
+function attachLoginHandlers(){
+  const setupBtn = document.getElementById('setupOwnerBtn');
+  if(setupBtn){
+    const qSelect = document.getElementById('setupSecurityQuestion');
+    const customWrap = document.getElementById('customQuestionWrap');
+    if(qSelect) qSelect.onchange = ()=>{ customWrap.style.display = qSelect.value==='custom' ? 'block' : 'none'; };
+    setupBtn.onclick = async ()=>{
+      try{
+        const name = document.getElementById('setupName').value.trim();
+        const email = document.getElementById('setupEmail').value.trim();
+        const phone = document.getElementById('setupPhone').value.trim();
+        const rawPassword = document.getElementById('setupPassword').value;
+        const qChoice = document.getElementById('setupSecurityQuestion').value;
+        const customQ = document.getElementById('setupCustomQuestion').value.trim();
+        const rawAnswer = document.getElementById('setupSecurityAnswer').value.trim();
+        const question = qChoice==='custom' ? customQ : qChoice;
+        if(!name || !email || !phone || !rawPassword || !question || !rawAnswer){ showToast('Fill out all fields, including the security question'); return; }
+        if(!/^\S+@\S+\.\S+$/.test(email)){ showToast('Enter a valid email address'); return; }
+        if(rawPassword.length < 6){ showToast('Password should be at least 6 characters'); return; }
+        const password = await hashPassword(rawPassword);
+        const securityAnswerHash = await hashPassword(rawAnswer.toLowerCase());
+        const entry = {name, email, phone, password, role:'Owner', employeeId:'OWNER-1', securityQuestion:question, securityAnswerHash};
+        state.data.roster.push(entry);
+        const saveResult = await sset(KEYS.roster, state.data.roster);
+        state.user = { name, role:'Owner', phone };
+        await personalSet('lastUser', state.user);
+        showToast('Owner account created');
+        render();
+      } catch(err){
+        console.error('Owner setup failed:', err);
+        showToast('Error: ' + err.message);
+      }
+    };
+    return;
+  }
+
+  const showSignup = document.getElementById('showSignupBtn');
+  if(showSignup) showSignup.onclick = ()=>{ state.authView = 'signup'; render(); };
+  const showRecover = document.getElementById('showRecoverBtn');
+  if(showRecover) showRecover.onclick = ()=>{ state.authView = 'recoverPhone'; render(); };
+  const backToLogin = document.getElementById('backToLoginBtn');
+  if(backToLogin) backToLogin.onclick = ()=>{ state.authView = 'login'; state.recoverPhone=null; state.recoverQuestion=null; render(); };
+
+  const resetAllBtn = document.getElementById('resetAllBtn');
+  if(resetAllBtn) resetAllBtn.onclick = ()=>{
+    state.modal = {
+      kind:'confirm',
+      title:'Reset all app data?',
+      message:'This will permanently erase all accounts, orders, payouts, schedule, and announcements for everyone. This cannot be undone.',
+      confirmLabel:'Reset everything',
+      danger:true,
+      action:'resetAllData'
+    };
+    render();
+  };
+
+  const recoverFindBtn = document.getElementById('recoverFindBtn');
+  if(recoverFindBtn) recoverFindBtn.onclick = ()=>{
+    const phone = document.getElementById('recoverPhone').value.trim();
+    const entry = state.data.roster.find(r=>r.phone===phone);
+    if(!entry || !entry.securityQuestion){ showToast('No recovery option is set up for that phone number. Ask your owner for help.'); return; }
+    state.recoverPhone = phone;
+    state.recoverQuestion = entry.securityQuestion;
+    state.authView = 'recoverAnswer';
+    render();
+  };
+
+  const recoverResetBtn = document.getElementById('recoverResetBtn');
+  if(recoverResetBtn) recoverResetBtn.onclick = async ()=>{
+    const answer = document.getElementById('recoverAnswer').value.trim();
+    const newPassword = document.getElementById('recoverNewPassword').value;
+    const confirmPassword = document.getElementById('recoverConfirmPassword').value;
+    if(!answer || !newPassword || !confirmPassword){ showToast('Fill out all fields'); return; }
+    if(newPassword.length < 6){ showToast('Password should be at least 6 characters'); return; }
+    if(newPassword !== confirmPassword){ showToast("Passwords don't match"); return; }
+    const entry = state.data.roster.find(r=>r.phone===state.recoverPhone);
+    if(!entry){ showToast('Something went wrong, start over'); state.authView='login'; render(); return; }
+    const answerHash = await hashPassword(answer.toLowerCase());
+    if(answerHash !== entry.securityAnswerHash){ showToast('That answer is incorrect'); return; }
+    entry.password = await hashPassword(newPassword);
+    await sset(KEYS.roster, state.data.roster);
+    state.authView = 'login';
+    state.recoverPhone = null;
+    state.recoverQuestion = null;
+    showToast('Password reset, sign in with your new password');
+    render();
+  };
+
+  const signupBtn = document.getElementById('signupBtn');
+  if(signupBtn){
+    signupBtn.onclick = async ()=>{
+      const code = document.getElementById('signupCode').value.trim().toUpperCase();
+      const name = document.getElementById('signupName').value.trim();
+      const phone = document.getElementById('signupPhone').value.trim();
+      const rawPassword = document.getElementById('signupPassword').value;
+      if(!code || !name || !phone || !rawPassword){ showToast('Fill out all fields'); return; }
+      if(rawPassword.length < 6){ showToast('Password should be at least 6 characters'); return; }
+      const invite = state.data.inviteCodes.find(c=>c.code===code && !c.used);
+      if(!invite){ showToast('That invite code is invalid or already used'); return; }
+      if(state.data.roster.find(r=>r.phone===phone)){ showToast('That phone number is already in use'); return; }
+      const password = await hashPassword(rawPassword);
+      const accountName=invite.name||name;
+      state.data.roster.push({ name:accountName, phone, password, role:invite.role||'Employee', employeeId:invite.employeeId||null, email:invite.email||null, area:invite.area||'Central Area', store:invite.store||'Metro Downtown' });
+      invite.used = true;
+      invite.usedBy = name;
+      await sset(KEYS.roster, state.data.roster);
+      await sset(KEYS.inviteCodes, state.data.inviteCodes);
+      state.user = { name:accountName, role:invite.role||'Employee', phone };
+      await personalSet('lastUser', state.user);
+      state.authView = 'login';
+      showToast('Account created');
+      render();
+    };
+    return;
+  }
+
+  document.getElementById('loginBtn').onclick = async ()=>{
+    const phone = document.getElementById('loginPhone').value.trim();
+    const rawPassword = document.getElementById('loginPassword').value;
+    if(!phone || !rawPassword){ showToast('Enter email and password'); return; }
+    const security = state.data.loginSecurity || {};
+    const record = security[phone];
+    const now = Date.now();
+    if(record && record.lockedUntil && record.lockedUntil > now){
+      const minsLeft = Math.ceil((record.lockedUntil - now)/60000);
+      showToast(`Too many failed attempts. Try again in ${minsLeft} min.`);
+      return;
+    }
+    const hashed = await hashPassword(rawPassword);
+    const match = state.data.roster.find(r=>(r.email&&r.email.toLowerCase()===phone.toLowerCase()||r.phone===phone)&&r.password===hashed);
+    if(!match){
+      const attempts = (record && record.lockedUntil <= now ? 0 : (record ? record.attempts : 0)) + 1;
+      security[phone] = { attempts, lockedUntil: attempts >= LOCKOUT_MAX_ATTEMPTS ? now + LOCKOUT_MS : 0 };
+      state.data.loginSecurity = security;
+      await sset(KEYS.loginSecurity, security);
+      if(attempts >= LOCKOUT_MAX_ATTEMPTS){ showToast('Too many failed attempts. Locked for 5 minutes.'); }
+      else { showToast('Email or password not recognized'); }
+      return;
+    }
+    delete security[phone];
+    state.data.loginSecurity = security;
+    await sset(KEYS.loginSecurity, security);
+    state.user = { name: match.name, role: match.role, phone: match.phone };
+    await personalSet('lastUser', state.user);
+    render();
+  };
+}
+
+function homeTab(){
+  const announcements=[...(state.data.announcements||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const visibleOrders=(state.data.orders||[]).filter(o=>isAdmin()||o.employee.toLowerCase()===state.user.name.toLowerCase());
+  const visiblePayouts=(state.data.payouts||[]).filter(p=>isAdmin()||p.employee.toLowerCase()===state.user.name.toLowerCase());
+  const visibleRequests=(state.data.requests||[]).filter(r=>hasPermission('canManageMaintenance')||r.employee.toLowerCase()===state.user.name.toLowerCase());
+  const pendingOrders=visibleOrders.filter(o=>o.status==='pending').length;
+  const pendingPayouts=visiblePayouts.filter(p=>p.status==='pending').length;
+  const pendingRequests=visibleRequests.filter(r=>r.status==='pending').length;
+  const myShifts = (state.data.schedule||[]).filter(s=>s.employee.toLowerCase()===state.user.name.toLowerCase())
+    .sort((a,b)=>a.day.localeCompare(b.day));
+  const myEntry = getMyRosterEntry();
+  return `
+    <div class="greeting">
+      <div class="eyebrow">${new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</div>
+      <h1>Good ${new Date().getHours()<12?'morning':new Date().getHours()<18?'afternoon':'evening'}, ${escapeHtml(state.user.name.split(' ')[0])}</h1>
+      <p>Here’s what’s happening across your store today.</p>
+    </div>
+    <div class="ops-strip">
+      ${opsSummaryCard('catalog','Catalog','Accessories & orders','tint-blue',pendingOrders)}
+      ${opsSummaryCard('payouts','Payouts','Pay, commission & bonuses','tint-green',pendingPayouts)}
+      ${opsSummaryCard('requests','Requests','Store needs & maintenance','tint-red',pendingRequests)}
+    </div>
+    ${myEntry && !isOwner() ? (myEntry.employeeId ? `
+    <div class="card">
+      <div class="row"><span class="muted">Your employee ID</span><strong>${escapeHtml(myEntry.employeeId)}</strong></div>
+    </div>` : `
+    <div class="card"><p class="muted" style="margin:0;">Your employee ID hasn't been assigned yet &mdash; ask your owner.</p></div>`) : ''}
+    <div class="card feature-card">
+      <div class="card-head"><span class="card-head-title">Upcoming shifts</span><button class="see-all" data-quick="schedule">See all</button></div>
+      <div class="list-wrap">
+      ${myShifts.length? myShifts.map(s=>`
+        <div class="list-item"><span>${s.day}</span><span class="muted">${s.start} - ${s.end}</span></div>`).join('')
+        : '<div class="empty">No shifts scheduled yet.</div>'}
+      </div>
+    </div>
+    <div class="card feature-card">
+      <div class="card-head"><span class="card-head-title">Announcements</span><button class="see-all" data-quick="announcements">See all</button></div>
+      <div class="list-wrap">
+        ${announcements.length?announcements.slice(0,2).map(a=>`<div class="list-item" style="display:block;">
+          <div class="row"><strong style="font-size:13px;">${escapeHtml(a.author)}</strong><span class="muted" style="font-size:11px;">${a.date}</span></div>
+          <div style="font-size:14px;line-height:1.45;margin-top:4px;">${escapeHtml(a.text)}</div>
+        </div>`).join(''):'<div class="empty">No announcements yet.</div>'}
+      </div>
+    </div>
+  `;
+}
+
+function quickTile(key,label,tint){ return `<button class="quick-tile" data-quick="${key}"><span class="quick-icon ${tint}">${uiIcon(key==='home'?'bell':key)}</span><span class="quick-label">${label}</span></button>`; }
+function opsSummaryCard(key,title,note,tint,count){return `<button class="ops-card" data-quick="${key}"><span class="quick-icon ${tint}">${uiIcon(key)}</span><span class="ops-copy"><span class="ops-title">${title}</span><span class="ops-note">${note}</span></span><span class="pending-count"><small>Pending</small>${count}</span></button>`;}
+
+function announcementsTab(){
+  const anns=[...(state.data.announcements||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  return `
+    <div class="card feature-card">
+      <div class="card-head"><span class="card-head-title">All announcements</span><span class="card-head-note">${anns.length} total</span></div>
+      <div class="list-wrap">
+        ${anns.length?anns.map(a=>`<div class="list-item" style="display:block;">
+          <div class="row"><strong style="font-size:13px;">${escapeHtml(a.author)}</strong><span class="muted" style="font-size:11px;">${a.date}</span></div>
+          <div style="font-size:14px;line-height:1.45;margin-top:5px;">${escapeHtml(a.text)}</div>
+          <span class="audience-chip">${uiIcon('team')} ${escapeHtml(a.audienceType&&a.audienceValue?`${a.audienceType}: ${a.audienceValue}`:'All stores')}</span>
+          ${a.attachment?`<img src="${a.attachment}" style="max-width:100%;border-radius:13px;margin-top:10px;display:block;">`:''}
+        </div>`).join(''):'<div class="empty">No announcements yet.</div>'}
+      </div>
+    </div>
+    ${hasPermission('canPostAnnouncements')?`<button class="fab" id="openAnnComposer" aria-label="Add announcement">+</button>`:''}
+    ${state.announcementComposer?announcementSheet():''}
+  `;
+}
+
+function announcementSheet(){
+  return `<div class="sheet-overlay" id="annSheetOverlay">
+    <div class="bottom-sheet" role="dialog" aria-modal="true" aria-label="New announcement">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head"><div class="sheet-title">New announcement</div><button class="close-sheet" id="closeAnnComposer" aria-label="Close">×</button></div>
+      <div class="field"><label>Message</label><textarea id="annText" rows="4" placeholder="What's the update?"></textarea></div>
+      <div class="field"><label>Attachment <span style="font-weight:400;">(optional, image under 2MB)</span></label><input id="annFile" type="file" accept="image/*"></div>
+      <div class="field"><label>Audience</label>
+        <div class="segment">
+          <label><input type="radio" name="annAudience" value="Store" checked><span>By store</span></label>
+          <label><input type="radio" name="annAudience" value="Area"><span>By area</span></label>
+        </div>
+      </div>
+      <div class="field" id="storeAudienceField"><label>Choose store</label><select id="annStore">${locationOptions(APP_ROLE==='Owner'?storeNamesForFilter('All areas'):storesForArea(roleScope().area),roleScope().store)}</select></div>
+      <div class="field" id="areaAudienceField" style="display:none;"><label>Choose area</label><select id="annArea">${locationOptions(APP_ROLE==='Owner'?areaNames():[roleScope().area],roleScope().area)}</select></div>
+      <button class="btn" id="postAnnBtn">Post announcement</button>
+    </div>
+  </div>`;
+}
+
+function settingsTab(){
+  return `<div class="card">
+    <div class="section-title" style="margin-top:0;">Change password</div>
+    <div class="field"><label>Current password</label><input id="curPwd" type="password" placeholder="Current password"></div>
+    <div class="field"><label>New password</label><input id="newPwd" type="password" placeholder="At least 6 characters"></div>
+    <div class="field"><label>Confirm new password</label><input id="confirmPwd" type="password" placeholder="Retype new password"></div>
+    <button class="btn secondary" id="changePwdBtn">Update password</button>
+  </div>`;
+}
+
+const STORE_GEOFENCES={
+  'Metro Downtown':{lat:40.7128,lng:-74.0060,radius:300},
+  'Metro Midtown':{lat:40.7549,lng:-73.9840,radius:300},
+  'Metro North':{lat:40.7870,lng:-73.9754,radius:300},
+  'Metro Uptown':{lat:40.8075,lng:-73.9626,radius:300},
+  'Metro East':{lat:40.7282,lng:-73.7949,radius:300},
+  'Metro Lakeside':{lat:40.7397,lng:-73.7500,radius:300},
+  'Metro West':{lat:40.7178,lng:-74.0431,radius:300},
+  'Metro Riverside':{lat:40.7320,lng:-74.0750,radius:300}
+};
+let geoWatchId=null;
+function myTimeEntries(){return (state.data.timeEntries||[]).filter(e=>e.employee===state.user.name);}
+function activeTimeEntry(){return myTimeEntries().find(e=>!e.clockOut);}
+function hoursBetween(a,b){return Math.max(0,(new Date(b)-new Date(a))/3600000);}
+function timeSummary(){
+  const since=Date.now()-14*86400000;
+  const entries=myTimeEntries().filter(e=>new Date(e.clockIn).getTime()>=since);
+  const hours=entries.reduce((sum,e)=>sum+hoursBetween(e.clockIn,e.clockOut||new Date().toISOString()),0);
+  const entry=getMyRosterEntry()||defaultLogin();
+  const rate=entry.hourlyRate||(entry.role==='Manager'?28:18);
+  return {hours,rate,pay:hours*rate};
+}
+function timeTab(){
+  const active=activeTimeEntry(),summary=timeSummary(),scope=roleScope();
+  return `<div class="clock-card"><div class="clock-status">${active?'Clocked in':'Ready to clock in'}</div><div class="clock-time">${active?formatElapsed(active.clockIn):new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div class="clock-store">${escapeHtml(scope.store)} · ${escapeHtml(scope.area)}</div><button class="btn clock-action ${active?'clocked':''}" id="clockActionBtn">${active?'Clock out':'Clock in'}</button><div class="geo-note">${uiIcon('location')}<span>${active?'Location monitoring is active. Leaving the store geofence will clock you out automatically.':'Your location must be within 300 metres of the assigned store.'}</span></div></div><div class="pay-grid"><div class="pay-stat"><span>Hours · last 14 days</span><strong>${summary.hours.toFixed(1)}h</strong></div><div class="pay-stat"><span>Estimated gross pay</span><strong>${money(summary.pay)}</strong></div></div><div class="card"><div class="row"><span class="muted">Hourly rate</span><strong>${money(summary.rate)}/hr</strong></div><hr class="divider"><div class="section-title">Recent time entries</div>${myTimeEntries().slice().reverse().slice(0,6).map(e=>`<div class="list-item"><div><strong style="font-size:12px;">${new Date(e.clockIn).toLocaleDateString()}</strong><div class="muted">${new Date(e.clockIn).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} – ${e.clockOut?new Date(e.clockOut).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Now'}</div></div><span>${hoursBetween(e.clockIn,e.clockOut||new Date().toISOString()).toFixed(1)}h</span></div>`).join('')||'<div class="empty">No time entries yet.</div>'}</div>`;
+}
+function salariesTab(){
+  const all=state.data.salaries||[];
+  const list=all.filter(s=>(state.salariesAreaFilter==='All areas'||s.area===state.salariesAreaFilter)&&(state.salariesStoreFilter==='All stores'||s.store===state.salariesStoreFilter)&&(state.salariesStatusFilter==='all'||s.status===state.salariesStatusFilter));
+  const pending=list.filter(s=>s.status==='pending'),paid=list.filter(s=>s.status==='paid');
+  return `${locationFilterCard('salaries',state.salariesAreaFilter,state.salariesStoreFilter)}<div class="status-filter">${['all','pending','paid'].map(v=>`<button class="${state.salariesStatusFilter===v?'active':''}" data-salary-status="${v}">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}</div><div class="salary-summary"><div class="pay-stat"><span>Pending payroll</span><strong>${money(pending.reduce((n,s)=>n+s.amount,0))}</strong></div><div class="pay-stat"><span>Paid payroll</span><strong>${money(paid.reduce((n,s)=>n+s.amount,0))}</strong></div></div>${list.map(s=>`<div class="salary-card" data-salary-detail="${s.id}"><div class="row"><div><strong>${escapeHtml(s.employee)}</strong><div class="salary-meta">${escapeHtml(s.period)} · ${s.hours.toFixed(1)}h at ${money(s.rate)}/hr</div></div><span class="badge ${s.status}">${s.status}</span></div><div class="row" style="margin-top:12px;"><div><div class="salary-amount">${money(s.amount)}</div><div class="audience-chip">${uiIcon('store')} ${escapeHtml(s.area)} · ${escapeHtml(s.store)}</div></div>${s.status==='pending'?`<button class="btn small" data-pay-salary="${s.id}">Mark paid</button>`:`<span class="muted">${s.paidDate||''}</span>`}</div></div>`).join('')||'<div class="card empty">No salary records match these filters.</div>'}${state.salaryDetailId?salaryDetailSheet(state.salaryDetailId):''}`;
+}
+
+function salaryDetailSheet(id){
+  const salary=(state.data.salaries||[]).find(s=>s.id===id);if(!salary)return '';
+  const history=(state.data.salaries||[]).filter(s=>s.employee===salary.employee).slice().reverse();
+  const sampleInfo={'Jordan Smith':{employeeId:'EMP-1042',email:'jordan@metrostore.com',phone:'(555) 014-1042',role:'Employee'},'Taylor Reed':{employeeId:'EMP-1068',email:'taylor@metrostore.com',phone:'(555) 014-1068',role:'Employee'},'Alex Morgan':{employeeId:'EMP-1104',email:'alex@metrostore.com',phone:'(555) 014-1104',role:'Employee'},'Sam Wilson':{employeeId:'EMP-1121',email:'sam@metrostore.com',phone:'(555) 014-1121',role:'Employee'}};
+  const member={...(sampleInfo[salary.employee]||{}),...((state.data.roster||[]).find(r=>r.name===salary.employee)||{})};
+  const paidTotal=history.filter(s=>s.status==='paid').reduce((n,s)=>n+s.amount,0),pendingTotal=history.filter(s=>s.status==='pending').reduce((n,s)=>n+s.amount,0);
+  return `<div class="sheet-overlay"><div class="bottom-sheet" role="dialog" aria-modal="true" aria-label="Employee salary details"><div class="sheet-handle"></div><div class="sheet-head"><div class="sheet-title">Employee details</div><button class="close-sheet" id="closeSalaryDetail">×</button></div><div class="employee-detail-head"><div class="employee-detail-avatar">${initials(salary.employee)}</div><div><h3 style="margin:0 0 3px;">${escapeHtml(salary.employee)}</h3><div class="muted">${escapeHtml(member.role||'Employee')} · ${escapeHtml(salary.store)}</div></div></div><div class="detail-stats"><div class="detail-stat"><span>Rate</span><strong>${money(salary.rate)}/hr</strong></div><div class="detail-stat"><span>Paid</span><strong>${money(paidTotal)}</strong></div><div class="detail-stat"><span>Pending</span><strong>${money(pendingTotal)}</strong></div></div><div class="card" style="box-shadow:none;background:#F7F8FA;"><div class="row"><span class="muted">Employee ID</span><strong>${escapeHtml(member.employeeId||'—')}</strong></div><hr class="divider"><div class="row"><span class="muted">Email</span><strong style="font-size:11px;">${escapeHtml(member.email||'—')}</strong></div><hr class="divider"><div class="row"><span class="muted">Phone</span><strong>${escapeHtml(member.phone||'—')}</strong></div><hr class="divider"><div class="row"><span class="muted">Location</span><strong style="font-size:11px;">${escapeHtml(salary.area)} · ${escapeHtml(salary.store)}</strong></div></div><div class="section-title">Payment history</div><div class="card" style="box-shadow:none;">${history.map(h=>`<div class="list-item"><div><strong style="font-size:12px;">${escapeHtml(h.period)}</strong><div class="muted">${h.hours.toFixed(1)}h · ${h.status==='paid'?'Paid '+(h.paidDate||''):'Payment pending'}</div></div><div style="text-align:right;"><strong>${money(h.amount)}</strong><div style="margin-top:5px;">${h.status==='pending'?`<button class="btn small" data-pay-salary="${h.id}">Mark paid</button>`:`<span class="badge paid">paid</span>`}</div></div></div>`).join('')}</div></div></div>`;
+}
+function formatElapsed(start){const mins=Math.floor((Date.now()-new Date(start))/60000);return `${String(Math.floor(mins/60)).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;}
+function distanceMetres(lat1,lng1,lat2,lng2){const R=6371e3,p1=lat1*Math.PI/180,p2=lat2*Math.PI/180,dp=(lat2-lat1)*Math.PI/180,dl=(lng2-lng1)*Math.PI/180,a=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function assignedGeofence(){return STORE_GEOFENCES[roleScope().store]||STORE_GEOFENCES['Metro Downtown'];}
+async function finishClockOut(reason){const active=activeTimeEntry();if(!active)return;active.clockOut=new Date().toISOString();active.clockOutReason=reason;await sset(KEYS.timeEntries,state.data.timeEntries);if(geoWatchId!==null){navigator.geolocation.clearWatch(geoWatchId);geoWatchId=null;}showToast(reason==='left_geofence'?'Clocked out automatically after leaving the store':'Clocked out');render();}
+function startGeofenceWatch(){if(!activeTimeEntry()||geoWatchId!==null||!navigator.geolocation)return;const fence=assignedGeofence();geoWatchId=navigator.geolocation.watchPosition(pos=>{if(distanceMetres(pos.coords.latitude,pos.coords.longitude,fence.lat,fence.lng)>fence.radius)finishClockOut('left_geofence');},()=>{}, {enableHighAccuracy:true,maximumAge:15000,timeout:20000});}
+
+function catalogTab(){
+  const cat = state.data.catalog||[];
+  const orders = [...(state.data.orders||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const itemArea=i=>i.area||'Central Area', itemStore=i=>i.store||'Metro Downtown';
+  const orderArea=o=>o.area||'Central Area', orderStore=o=>o.store||'Metro Downtown';
+  const matchesLocation=(area,store)=>(state.catalogAreaFilter==='All areas'||area===state.catalogAreaFilter)&&(state.catalogStoreFilter==='All stores'||store===state.catalogStoreFilter);
+  const filteredCat=cat.filter(i=>matchesLocation(itemArea(i),itemStore(i)));
+  const filteredOrders=orders.filter(o=>matchesLocation(orderArea(o),orderStore(o)));
+  const myOrders = filteredOrders.filter(o=>o.employee.toLowerCase()===state.user.name.toLowerCase());
+  const cartItems = Object.entries(state.cart).filter(([id,qty])=>qty>0);
+  const cartTotal = cartItems.reduce((sum,[id,qty])=>{ const item = cat.find(c=>c.id===id); return sum + (item?item.price*qty:0); },0);
+  const canOrder = !isOwner();
+  return `
+    ${locationFilterCard('catalog',state.catalogAreaFilter,state.catalogStoreFilter)}
+    <div class="section-title">Accessory catalog</div>
+    <div class="card">
+      ${filteredCat.length? filteredCat.map(item=>`
+        <div class="list-item">
+          <div>
+            <div style="font-size:14px; font-weight:600;">${escapeHtml(item.name)}</div>
+            <div class="muted">${item.category} &middot; ${money(item.price)}</div>
+            <div class="audience-chip">${uiIcon('store')} ${escapeHtml(itemArea(item))} · ${escapeHtml(itemStore(item))}</div>
+          </div>
+          ${canOrder ? `
+          <div class="qty-control">
+            <button class="qty-btn" data-dec="${item.id}">-</button>
+            <span style="min-width:16px; text-align:center; font-size:14px;">${state.cart[item.id]||0}</span>
+            <button class="qty-btn" data-inc="${item.id}">+</button>
+          </div>` : `<span class="muted">${money(item.price)}</span>`}
+        </div>`).join('') : '<div class="empty">No accessories in catalog.</div>'}
+    </div>
+    ${canOrder && cartItems.length? `
+    <div class="card">
+      <div class="row"><strong>Order total</strong><strong>${money(cartTotal)}</strong></div>
+      <button class="btn" id="submitOrderBtn" style="margin-top:10px;">Submit order</button>
+    </div>` : ''}
+    <div class="section-title">${isAdmin()? (isOwner()? 'Orders to approve' : 'All orders') : 'Your orders'}</div>
+    <div class="card">
+      ${(isAdmin()?filteredOrders:myOrders).length? (isAdmin()?filteredOrders:myOrders).map(o=>`
+        <div class="list-item" style="display:block;">
+          <div class="row">
+            <strong style="font-size:13px;">${isAdmin()?o.employee:o.date}</strong>
+            <span class="badge ${o.status}">${o.status}</span>
+          </div>
+          <div class="muted" style="font-size:12px; margin:2px 0;">${o.items.map(i=>`${i.qty}x ${i.name}`).join(', ')}</div>
+          <div class="audience-chip">${uiIcon('store')} ${escapeHtml(orderArea(o))} · ${escapeHtml(orderStore(o))}</div>
+          <div class="row">
+            <span style="font-size:13px;">${money(o.total)}</span>
+            ${hasPermission('canApproveOrders') && o.status==='pending' ? `<button class="btn small secondary" data-fulfill="${o.id}">Approve order</button>` : ''}
+          </div>
+        </div>`).join('') : '<div class="empty">No orders yet.</div>'}
+    </div>
+    ${hasPermission('canManageCatalog')?`<button class="fab" id="openCatalogComposer" aria-label="Add item">+</button>`:''}
+    ${state.catalogComposer?catalogSheet():''}
+  `;
+}
+
+function catalogSheet(){
+  return `<div class="sheet-overlay"><div class="bottom-sheet" role="dialog" aria-modal="true" aria-label="Add catalog item">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><div class="sheet-title">Add catalog item</div><button class="close-sheet" id="closeCatalogComposer" aria-label="Close">×</button></div>
+    ${locationEntryFields('newItemArea','newItemStore')}
+    <div class="field"><label>Item name</label><input id="newItemName" placeholder="e.g. USB-C wall charger"></div>
+    <div class="field"><label>Price</label><input id="newItemPrice" placeholder="0.00" type="number" step="0.01"></div>
+    <div class="field"><label>Category</label><input id="newItemCat" placeholder="e.g. Chargers"></div>
+    <button class="btn" id="addItemBtn">Add item</button>
+  </div></div>`;
+}
+
+function areaNames(){return ['Central Area','North Area','East Area','West Area'];}
+function storesForArea(area){return {
+  'Central Area':['Metro Downtown','Metro Midtown'],
+  'North Area':['Metro North','Metro Uptown'],
+  'East Area':['Metro East','Metro Lakeside'],
+  'West Area':['Metro West','Metro Riverside']
+}[area]||[];}
+function areaForStore(store){return areaNames().find(area=>storesForArea(area).includes(store))||'Central Area';}
+function storeNamesForFilter(area){return area==='All areas'?areaNames().flatMap(storesForArea):storesForArea(area);}
+function locationOptions(values,selected){return values.map(v=>`<option value="${v}" ${v===selected?'selected':''}>${v}</option>`).join('');}
+
+function payoutsTab(){
+  const payouts = [...(state.data.payouts||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const payoutArea=p=>p.area||'Central Area', payoutStore=p=>p.store||'Metro Downtown';
+  const filteredPayouts=payouts.filter(p=>(state.payoutAreaFilter==='All areas'||payoutArea(p)===state.payoutAreaFilter)&&(state.payoutStoreFilter==='All stores'||payoutStore(p)===state.payoutStoreFilter));
+  const myPayouts = filteredPayouts.filter(p=>p.employee.toLowerCase()===state.user.name.toLowerCase());
+  const list = isAdmin() ? filteredPayouts : myPayouts;
+  const total = myPayouts.reduce((s,p)=>s+p.amount,0);
+  return `
+    ${locationFilterCard('payout',state.payoutAreaFilter,state.payoutStoreFilter)}
+    ${!isAdmin() ? `<div class="card"><div class="row"><span class="muted">Your total logged</span><strong>${money(total)}</strong></div></div>` : ''}
+    <div class="section-title">${isAdmin()?'All payout entries':'Your payout history'}</div>
+    <div class="card">
+      ${list.length? list.map(p=>`
+        <div class="list-item" style="display:block;">
+          <div class="row">
+            <strong style="font-size:13px;">${isAdmin()?p.employee:p.type}</strong>
+            <span class="badge ${p.status}">${p.status}</span>
+          </div>
+          <div class="muted" style="font-size:12px;">${isAdmin()?p.type+' · ':''}${p.date}${p.note? ' · '+escapeHtml(p.note):''}</div>
+          <div class="audience-chip">${uiIcon('store')} ${escapeHtml(payoutArea(p))} · ${escapeHtml(payoutStore(p))}</div>
+          <div class="row">
+            <span style="font-size:14px; font-weight:600;">${money(p.amount)}</span>
+            ${isAdmin() && p.status==='pending' ? `<button class="btn small secondary" data-paid="${p.id}">Mark paid</button>` : ''}
+          </div>
+        </div>`).join('') : '<div class="empty">No payout entries yet.</div>'}
+    </div>
+    <button class="fab" id="openPayoutComposer" aria-label="Add payout">+</button>
+    ${state.payoutComposer?payoutSheet():''}
+  `;
+}
+
+function payoutSheet(){
+  return `<div class="sheet-overlay"><div class="bottom-sheet" role="dialog" aria-modal="true" aria-label="Add payout">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head"><div class="sheet-title">Add payout</div><button class="close-sheet" id="closePayoutComposer" aria-label="Close">×</button></div>
+    ${locationEntryFields('newPayoutArea','newPayoutStore')}
+    <div class="field"><label>Type</label><select id="payoutType"><option value="Weekly pay">Weekly pay</option><option value="Commission">Commission</option><option value="SPIFF">SPIFF</option><option value="Other">Other</option></select></div>
+    <div class="field"><label>Amount</label><input id="payoutAmount" type="number" step="0.01" placeholder="0.00"></div>
+    <div class="field"><label>Note <span style="font-weight:400;">(optional)</span></label><input id="payoutNote" placeholder="e.g. iPhone activation bonus"></div>
+    ${isAdmin()?`<div class="field"><label>Employee</label><input id="payoutEmployee" placeholder="Employee name" value="${escapeHtml(state.user.name)}"></div>`:''}
+    <button class="btn" id="addPayoutBtn">Log payout</button>
+  </div></div>`;
+}
+
+function scheduleTab(){
+  const sched = [...(state.data.schedule||[])].sort((a,b)=>a.day.localeCompare(b.day));
+  const week=currentWeekDates();
+  const selectedDay=state.scheduleDayFilter||localDateStr(new Date());
+  const shiftArea=s=>s.area||'Central Area',shiftStore=s=>s.store||'Metro Downtown';
+  const filteredSched=sched.filter(s=>s.day===selectedDay&&shiftArea(s)===state.scheduleAreaFilter&&shiftStore(s)===state.scheduleStoreFilter).sort((a,b)=>a.start.localeCompare(b.start));
+  const mySched = filteredSched.filter(s=>s.employee.toLowerCase()===state.user.name.toLowerCase());
+  const displaySched=isAdmin()?filteredSched:mySched;
+  const canPublish = hasPermission('canPublishSchedule');
+  const selectedDate=new Date(selectedDay+'T12:00:00');
+  return `
+    ${locationFilterCard('schedule',state.scheduleAreaFilter,state.scheduleStoreFilter,true)}
+    <div class="schedule-context">${selectedDate.toLocaleDateString(undefined,{weekday:'long'})} · ${escapeHtml(state.scheduleStoreFilter)} schedule</div>
+    <div class="week-card">
+      <div class="week-days">${week.map(scheduleDayButton).join('')}</div>
+    </div>
+    <div class="schedule-timeline">
+      ${displaySched.length?displaySched.map(s=>scheduleTimelineRow(s,canPublish)).join(''):'<div class="card empty">No shifts scheduled for this day.</div>'}
+    </div>
+    ${canPublish?`<button class="fab" id="openShiftComposer" aria-label="Publish a shift">+</button>`:''}
+    ${state.shiftComposer?shiftSheet():''}
+  `;
+}
+
+function localDateStr(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function currentWeekDates(){const now=new Date(),monday=new Date(now);monday.setHours(12,0,0,0);monday.setDate(now.getDate()-((now.getDay()+6)%7));return Array.from({length:7},(_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return localDateStr(d);});}
+function scheduleDayButton(date){const d=new Date(date+'T12:00:00'),today=localDateStr(new Date()),selected=state.scheduleDayFilter||today;return `<button class="week-day ${date===today?'today':''} ${selected===date?'selected':''}" data-schedule-day="${date}"><span>${d.toLocaleDateString(undefined,{weekday:'short'})}</span></button>`;}
+function scheduleTimelineRow(s,canPublish){const now=new Date(),start=new Date(`${s.day}T${s.start}`),end=new Date(`${s.day}T${s.end}`),isNow=now>=start&&now<=end,isPast=now>end;return `<div class="timeline-row"><div class="timeline-time">${s.start}</div><div class="shift-card ${isNow?'is-now':isPast?'is-past':''}"><div class="shift-title">${escapeHtml(s.employee)}</div><div class="shift-sub">${s.start}–${s.end} · ${escapeHtml(s.store||'Metro Downtown')}</div>${isNow?'<span class="now-pill">Now</span>':''}${canPublish?`<div class="shift-actions"><button class="btn small secondary" data-removeshift="${s.id}">Remove</button></div>`:''}</div></div>`;}
+
+function shiftSheet(){
+  return `<div class="sheet-overlay" id="shiftSheetOverlay">
+    <div class="bottom-sheet" role="dialog" aria-modal="true" aria-label="Publish a shift">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head"><div class="sheet-title">Publish a shift</div><button class="close-sheet" id="closeShiftComposer" aria-label="Close">×</button></div>
+      ${locationEntryFields('newShiftArea','newShiftStore')}
+      <div class="field"><label>Employee</label><input id="shiftEmployee" placeholder="Employee name" list="rosterNames2"><datalist id="rosterNames2">${(state.data.roster||[]).map(r=>`<option value="${escapeHtml(r.name)}">`).join('')}</datalist></div>
+      <div class="field"><label>Day / date</label><input id="shiftDay" type="date"></div>
+      <div class="flex-gap">
+        <div class="field"><label>Start</label><input id="shiftStart" type="time"></div>
+        <div class="field"><label>End</label><input id="shiftEnd" type="time"></div>
+      </div>
+      <button class="btn" id="addShiftBtn">Publish shift</button>
+    </div>
+  </div>`;
+}
+
+function requestsTab(){
+  const all = [...(state.data.requests||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const requestArea=r=>r.assignmentType==='Area'?(r.assignmentValue||'Central Area'):areaForStore(r.assignmentValue||'Metro Downtown');
+  const requestStore=r=>r.assignmentType==='Store'?(r.assignmentValue||'Metro Downtown'):null;
+  const filteredAll=all.filter(r=>{
+    const area=requestArea(r),store=requestStore(r);
+    const areaMatch=state.requestAreaFilter==='All areas'||area===state.requestAreaFilter;
+    const storeMatch=state.requestStoreFilter==='All stores'||store===state.requestStoreFilter||(!store&&area===areaForStore(state.requestStoreFilter));
+    return areaMatch&&storeMatch;
+  });
+  const mine = filteredAll.filter(r=>r.employee.toLowerCase()===state.user.name.toLowerCase());
+  const canManage = hasPermission('canManageMaintenance');
+  const list = canManage ? filteredAll : mine;
+  return `
+    ${locationFilterCard('request',state.requestAreaFilter,state.requestStoreFilter)}
+    <div class="section-title">${canManage? 'All requests' : 'Your requests'}</div>
+    <div class="card">
+      ${list.length? list.map(r=>`
+        <div class="list-item" style="display:block;">
+          <div class="row">
+            <strong style="font-size:13px;">${canManage? r.employee : r.type}</strong>
+            <span class="badge ${r.status}">${r.status}</span>
+          </div>
+          <div class="muted" style="font-size:12px;">${canManage? r.type+' · ':''}${r.date}</div>
+          <div style="font-size:14px; margin:4px 0;">${escapeHtml(r.details)}</div>
+          <span class="audience-chip">${uiIcon('store')} ${escapeHtml(r.assignmentType&&r.assignmentValue?`${r.assignmentType}: ${r.assignmentValue}`:'Store not assigned')}</span>
+          ${canManage && r.status==='pending' ? `<button class="btn small secondary" data-resolvereq="${r.id}">Mark resolved</button>` : ''}
+        </div>`).join('') : '<div class="empty">No requests yet.</div>'}
+    </div>
+    <button class="fab" id="openRequestComposer" aria-label="Add request">+</button>
+    ${state.requestComposer?requestSheet():''}
+  `;
+}
+
+function requestSheet(){
+  return `<div class="sheet-overlay" id="requestSheetOverlay">
+    <div class="bottom-sheet" role="dialog" aria-modal="true" aria-label="Add request">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head"><div class="sheet-title">Add request</div><button class="close-sheet" id="closeRequestComposer" aria-label="Close">×</button></div>
+      <div class="field"><label>Request type</label><select id="reqType"><option value="Requirement">Requirement</option><option value="Maintenance">Maintenance</option></select></div>
+      <div class="field"><label>Details</label><textarea id="reqDetails" rows="4" placeholder="What do you need, or what needs fixing?"></textarea></div>
+      ${requestAssignmentFields()}
+      <button class="btn" id="submitReqBtn">Submit request</button>
+    </div>
+  </div>`;
+}
+
+function teamTab(){
+  const roster = state.data.roster||[];
+  const canEditRoster = isOwner() || hasPermission('canEditRoster');
+  const canInvite = isOwner() || hasPermission('canInviteEmployees');
+  const activeCodes = (state.data.inviteCodes||[]).filter(c=>!c.used);
+  const memberArea=r=>r.area||'Central Area',memberStore=r=>r.store||'Metro Downtown';
+  const filteredRoster=roster.filter(r=>(state.teamAreaFilter==='All areas'||memberArea(r)===state.teamAreaFilter)&&(state.teamStoreFilter==='All stores'||memberStore(r)===state.teamStoreFilter));
+  const filteredInvites=activeCodes.filter(c=>(state.teamAreaFilter==='All areas'||memberArea(c)===state.teamAreaFilter)&&(state.teamStoreFilter==='All stores'||memberStore(c)===state.teamStoreFilter));
+  return `
+    ${locationFilterCard('team',state.teamAreaFilter,state.teamStoreFilter)}
+    <div class="section-title">All team members</div>
+    <div class="card">
+      ${filteredInvites.map(c=>`<div class="list-item"><div><div style="font-weight:600;">${escapeHtml(c.name||c.email||'Invited member')}</div><div class="muted" style="font-size:11px;">${escapeHtml(c.email||'')} · ${escapeHtml(memberArea(c))} · ${escapeHtml(memberStore(c))}</div><span class="audience-chip">Invite pending · ${c.code}</span></div>${isOwner()?`<button class="btn small secondary" data-revokecode="${c.code}">Revoke</button>`:''}</div>`).join('')}
+      ${filteredRoster.length? filteredRoster.map(r=>`
+        <div class="list-item team-row" data-team-detail="${escapeHtml(r.name)}" role="button" tabindex="0" aria-label="View details for ${escapeHtml(r.name)}">
+          <div class="row">
+            <div>
+              <div style="font-weight:600;">${escapeHtml(r.name)}</div>
+              <div class="muted" style="font-size:11px;">${r.employeeId? 'ID: '+escapeHtml(r.employeeId) : 'no ID assigned'}${r.email?' · '+escapeHtml(r.email):''}${isOwner()&&r.phone?' · '+escapeHtml(r.phone):''}</div>
+              <div class="audience-chip">${uiIcon('store')} ${escapeHtml(memberArea(r))} · ${escapeHtml(memberStore(r))}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;"><span class="muted">${r.role}</span>${r.role!=='Owner'?`<button class="kebab-btn" data-team-menu="${escapeHtml(r.name)}" aria-label="Employee actions">⋮</button>`:''}</div>
+          </div>
+          ${state.teamMenuFor===r.name&&r.role!=='Owner'?`<div class="team-action-menu">${canEditRoster?`<button data-editroster="${escapeHtml(r.name)}">Edit employee</button><button class="danger-option" data-removeteam="${escapeHtml(r.name)}">Remove employee</button>`:''}</div>`:''}
+          ${isOwner() && state.permEditFor===r.name ? permissionEditor(r) : ''}
+        </div>`).join('') : (!filteredInvites.length?'<div class="empty">No team members yet.</div>':'')}
+    </div>
+    ${canInvite?`<button class="fab" id="openTeamComposer" aria-label="Add team member">+</button>`:''}
+    ${state.teamComposer?teamSheet():''}
+    ${state.teamDetailName?teamDetailSheet(state.teamDetailName):''}
+  `;
+}
+
+function teamSheet(){return `<div class="sheet-overlay"><div class="bottom-sheet" role="dialog" aria-modal="true" aria-label="Add team member">
+  <div class="sheet-handle"></div><div class="sheet-head"><div class="sheet-title">Add team member</div><button class="close-sheet" id="closeTeamComposer">×</button></div>
+  ${locationEntryFields('newTeamArea','newTeamStore')}
+  <div class="field"><label>Full name</label><input id="teamName" placeholder="e.g. Jordan Smith"></div>
+  <div class="field"><label>Email</label><input id="teamEmail" type="email" placeholder="jordan@example.com"></div>
+  <div class="field"><label>Phone number</label><input id="teamPhone" type="tel" placeholder="(555) 123-4567"></div>
+  <div class="field"><label>Employee ID</label><input id="teamEmployeeId" placeholder="e.g. EMP-1042"></div>
+  <div class="field"><label>Role</label><select id="teamRole"><option value="Employee">Employee</option>${isOwner()?'<option value="Manager">Manager</option>':''}</select></div>
+  <button class="btn" id="sendMemberInviteBtn">Send invite</button>
+</div></div>`;}
+
+function teamDetailSheet(name){
+  const member=(state.data.roster||[]).find(r=>r.name===name);if(!member)return '';
+  const canEditMember=isOwner()||hasPermission('canEditRoster');
+  const shifts=(state.data.schedule||[]).filter(s=>s.employee===name).sort((a,b)=>b.day.localeCompare(a.day));
+  const salaries=(state.data.salaries||[]).filter(s=>s.employee===name);
+  const paid=salaries.filter(s=>s.status==='paid').reduce((n,s)=>n+s.amount,0),pending=salaries.filter(s=>s.status==='pending').reduce((n,s)=>n+s.amount,0);
+  const permissionCount=member.role==='Owner'?PERMISSION_DEFS.length:member.role==='Manager'?PERMISSION_DEFS.filter(p=>!member.permissions||member.permissions[p.key]!==false).length:0;
+  return `<div class="sheet-overlay"><div class="bottom-sheet" role="dialog" aria-modal="true" aria-label="Team member details"><div class="sheet-handle"></div><div class="sheet-head"><div class="sheet-title">Team member details</div><button class="close-sheet" id="closeTeamDetail">×</button></div><div class="employee-detail-head"><div class="employee-detail-avatar">${initials(member.name)}</div><div><h3 style="margin:0 0 3px;">${escapeHtml(member.name)}</h3><div class="muted">${escapeHtml(member.role)} · ${escapeHtml(member.store||'Metro Downtown')}</div></div></div><div class="detail-stats"><div class="detail-stat"><span>Upcoming shifts</span><strong>${shifts.filter(s=>s.day>=todayStr()).length}</strong></div><div class="detail-stat"><span>Paid</span><strong>${money(paid)}</strong></div><div class="detail-stat"><span>Pending</span><strong>${money(pending)}</strong></div></div><div class="card" style="box-shadow:none;background:#F7F8FA;"><div class="row"><span class="muted">Employee ID</span><strong>${escapeHtml(member.employeeId||'—')}</strong></div><hr class="divider"><div class="row"><span class="muted">Email</span><strong style="font-size:11px;">${escapeHtml(member.email||'—')}</strong></div><hr class="divider"><div class="row"><span class="muted">Phone</span><strong>${escapeHtml(member.phone||'—')}</strong></div><hr class="divider"><div class="row"><span class="muted">Area</span><strong>${escapeHtml(member.area||'Central Area')}</strong></div><hr class="divider"><div class="row"><span class="muted">Store</span><strong>${escapeHtml(member.store||'Metro Downtown')}</strong></div>${member.role!=='Employee'?`<hr class="divider"><div class="row"><span class="muted">Permissions</span><strong>${permissionCount} enabled</strong></div>`:''}</div><div class="section-title">Recent shifts</div><div class="card" style="box-shadow:none;">${shifts.slice(0,4).map(s=>`<div class="list-item"><div><strong style="font-size:12px;">${s.day}</strong><div class="muted">${s.start}–${s.end}</div></div><span class="audience-chip">${escapeHtml(s.store||'Metro Downtown')}</span></div>`).join('')||'<div class="empty">No shifts assigned.</div>'}</div>${canEditMember&&member.role!=='Owner'?`<button class="btn secondary" data-editroster="${escapeHtml(member.name)}">Edit employee</button>`:''}</div></div>`;
+}
+
+function permissionEditor(r){
+  const perms = r.permissions || defaultPermissions();
+  return `
+    <div style="background:var(--paper); border-radius:8px; padding:10px 12px; margin-top:10px;">
+      <div class="section-title" style="margin-bottom:6px;">Access for ${escapeHtml(r.name)}</div>
+      ${PERMISSION_DEFS.map(d=>`
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink); font-weight:400; margin-bottom:6px;">
+          <input type="checkbox" data-permkey="${d.key}" ${perms[d.key]!==false?'checked':''} style="width:auto; margin:0;">
+          ${d.label}
+        </label>`).join('')}
+      <button class="btn secondary" data-savepermfor="${r.name}" style="margin-top:6px;">Save access</button>
+    </div>
+  `;
+}
+
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function renderModal(){
+  const m = state.modal;
+  if(!m) return '';
+  if(m.kind==='confirm'){
+    return `<div class="modal-overlay"><div class="modal-card">
+      <h3>${escapeHtml(m.title)}</h3>
+      <p class="muted">${escapeHtml(m.message)}</p>
+      <div class="flex-gap" style="margin-top:14px;">
+        <button class="btn secondary" id="modalCancelBtn">Cancel</button>
+        <button class="btn ${m.danger?'danger':''}" id="modalConfirmBtn">${escapeHtml(m.confirmLabel||'Confirm')}</button>
+      </div>
+    </div></div>`;
+  }
+  if(m.kind==='prompt'){
+    return `<div class="modal-overlay"><div class="modal-card">
+      <h3>${escapeHtml(m.title)}</h3>
+      ${m.message? `<p class="muted">${escapeHtml(m.message)}</p>`:''}
+      ${m.fields.map(f=>`
+        <div class="field">
+          <label>${escapeHtml(f.label)}</label>
+          ${f.type==='select'
+            ? `<select id="modalField_${f.id}">${f.options.map(o=>`<option value="${o}" ${o===f.value?'selected':''}>${o}</option>`).join('')}</select>`
+            : `<input id="modalField_${f.id}" type="${f.type||'text'}" value="${escapeHtml(f.value||'')}" placeholder="${escapeHtml(f.placeholder||'')}">`}
+        </div>`).join('')}
+      <div class="flex-gap" style="margin-top:6px;">
+        <button class="btn secondary" id="modalCancelBtn">Cancel</button>
+        <button class="btn" id="modalConfirmBtn">${escapeHtml(m.confirmLabel||'Save')}</button>
+      </div>
+    </div></div>`;
+  }
+  return '';
+}
+
+function attachModalHandlers(){
+  if(state.modal&&state.modal.action==='editRoster'){
+    const areaField=document.getElementById('modalField_area');
+    const storeField=document.getElementById('modalField_store');
+    if(areaField&&storeField) areaField.onchange=()=>{storeField.innerHTML=locationOptions(storesForArea(areaField.value),storesForArea(areaField.value)[0]);};
+  }
+  const cancelBtn = document.getElementById('modalCancelBtn');
+  if(cancelBtn) cancelBtn.onclick = ()=>{ state.modal = null; render(); };
+  const confirmBtn = document.getElementById('modalConfirmBtn');
+  if(confirmBtn) confirmBtn.onclick = ()=>{ handleModalConfirm(); };
+}
+
+async function handleModalConfirm(){
+  const m = state.modal;
+  if(!m) return;
+  try{
+    if(m.action==='resetAllData'){
+      await resetAllData();
+      state.user = null;
+      state.authView = 'login';
+      await loadAll();
+      state.modal = null;
+      showToast('All data has been reset');
+      render();
+      return;
+    }
+    if(m.action==='resetPassword'){
+      const val = document.getElementById('modalField_newpw').value;
+      if(!val || val.length < 6){ showToast('Password should be at least 6 characters'); return; }
+      const entry = state.data.roster.find(r=>r.name===m.context.name);
+      if(entry){
+        entry.password = await hashPassword(val);
+        await sset(KEYS.roster, state.data.roster);
+        showToast(`Password reset for ${entry.name}`);
+      }
+      state.modal = null;
+      render();
+      return;
+    }
+    if(m.action==='editId'){
+      const val = document.getElementById('modalField_newid').value.trim();
+      if(!val){ showToast('Employee ID cannot be empty'); return; }
+      if(state.data.roster.find(r=>r.name!==m.context.name && r.employeeId && r.employeeId.toLowerCase()===val.toLowerCase())){
+        showToast('That employee ID is already in use'); return;
+      }
+      const entry = state.data.roster.find(r=>r.name===m.context.name);
+      if(entry){
+        entry.employeeId = val;
+        await sset(KEYS.roster, state.data.roster);
+        showToast('Employee ID updated');
+      }
+      state.modal = null;
+      render();
+      return;
+    }
+    if(m.action==='editRoster'){
+      const nameVal = document.getElementById('modalField_name').value.trim();
+      const roleField = document.getElementById('modalField_role');
+      const areaField = document.getElementById('modalField_area');
+      const storeField = document.getElementById('modalField_store');
+      if(!nameVal){ showToast('Name cannot be empty'); return; }
+      const entry = state.data.roster.find(r=>r.name===m.context.name);
+      if(entry){
+        entry.name = nameVal;
+        if(entry.role!=='Owner' && roleField){
+          const roleVal = roleField.value;
+          entry.role = roleVal;
+          if(roleVal==='Manager' && !entry.permissions) entry.permissions = defaultPermissions();
+        }
+        if(areaField) entry.area=areaField.value;
+        if(storeField) entry.store=storeField.value;
+        await sset(KEYS.roster, state.data.roster);
+        showToast('Roster entry updated');
+      }
+      state.modal = null;
+      render();
+      return;
+    }
+  } catch(err){
+    console.error('Modal action failed:', err);
+    showToast('Error: ' + err.message);
+  }
+}
+
+function attachTabHandlers(){
+  document.querySelectorAll('[data-team-detail]').forEach(card=>{
+    const openDetails=e=>{if(e.target&&e.target.closest&&e.target.closest('button,.team-action-menu'))return;state.teamMenuFor=null;state.teamDetailName=card.dataset.teamDetail;render();};
+    card.onclick=openDetails;
+    card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDetails(e);}};
+  });
+  document.querySelectorAll('[data-team-menu]').forEach(button=>button.onclick=e=>{e.stopPropagation();state.teamMenuFor=state.teamMenuFor===button.dataset.teamMenu?null:button.dataset.teamMenu;render();});
+  const closeTeamDetail=document.getElementById('closeTeamDetail');
+  if(closeTeamDetail) closeTeamDetail.onclick=()=>{state.teamDetailName=null;render();};
+  const salariesAreaFilter=document.getElementById('salariesAreaFilter');
+  if(salariesAreaFilter) salariesAreaFilter.onchange=()=>{state.salariesAreaFilter=salariesAreaFilter.value;state.salariesStoreFilter='All stores';render();};
+  const salariesStoreFilter=document.getElementById('salariesStoreFilter');
+  if(salariesStoreFilter) salariesStoreFilter.onchange=()=>{state.salariesStoreFilter=salariesStoreFilter.value;render();};
+  document.querySelectorAll('[data-salary-status]').forEach(b=>b.onclick=()=>{state.salariesStatusFilter=b.dataset.salaryStatus;render();});
+  document.querySelectorAll('[data-salary-detail]').forEach(card=>card.onclick=()=>{state.salaryDetailId=card.dataset.salaryDetail;render();});
+  const closeSalaryDetail=document.getElementById('closeSalaryDetail');
+  if(closeSalaryDetail) closeSalaryDetail.onclick=()=>{state.salaryDetailId=null;render();};
+  document.querySelectorAll('[data-pay-salary]').forEach(b=>b.onclick=async e=>{e.stopPropagation();const salary=state.data.salaries.find(s=>s.id===b.dataset.paySalary);if(!salary)return;salary.status='paid';salary.paidDate=todayStr();await sset(KEYS.salaries,state.data.salaries);showToast(`Salary marked paid for ${salary.employee}`);render();});
+  const clockActionBtn=document.getElementById('clockActionBtn');
+  if(clockActionBtn) clockActionBtn.onclick=()=>{
+    if(activeTimeEntry()){finishClockOut('manual');return;}
+    if(!navigator.geolocation){showToast('Location services are not available in this browser');return;}
+    clockActionBtn.disabled=true;clockActionBtn.textContent='Checking location…';
+    const fence=assignedGeofence();
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      const distance=distanceMetres(pos.coords.latitude,pos.coords.longitude,fence.lat,fence.lng);
+      if(distance>fence.radius){showToast(`You are ${Math.round(distance)}m from the store. Move within ${fence.radius}m to clock in.`);clockActionBtn.disabled=false;clockActionBtn.textContent='Clock in';return;}
+      state.data.timeEntries.push({id:uid(),employee:state.user.name,area:roleScope().area,store:roleScope().store,clockIn:new Date().toISOString(),clockOut:null,clockInLocation:{lat:pos.coords.latitude,lng:pos.coords.longitude}});
+      await sset(KEYS.timeEntries,state.data.timeEntries);showToast('Clocked in');render();
+    },err=>{showToast(err.code===1?'Allow location access to clock in':'Could not verify your location');clockActionBtn.disabled=false;clockActionBtn.textContent='Clock in';},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+  };
+  if(!isOwner()) startGeofenceWatch();
+  const teamAreaFilter=document.getElementById('teamAreaFilter');
+  if(teamAreaFilter) teamAreaFilter.onchange=()=>{state.teamAreaFilter=teamAreaFilter.value;state.teamStoreFilter='All stores';render();};
+  const teamStoreFilter=document.getElementById('teamStoreFilter');
+  if(teamStoreFilter) teamStoreFilter.onchange=()=>{state.teamStoreFilter=teamStoreFilter.value;render();};
+  const openTeamComposer=document.getElementById('openTeamComposer');
+  if(openTeamComposer) openTeamComposer.onclick=()=>{state.teamComposer=true;render();};
+  const closeTeamComposer=document.getElementById('closeTeamComposer');
+  if(closeTeamComposer) closeTeamComposer.onclick=()=>{state.teamComposer=false;render();};
+  const newTeamArea=document.getElementById('newTeamArea');
+  if(newTeamArea) newTeamArea.onchange=()=>{document.getElementById('newTeamStore').innerHTML=locationOptions(storesForArea(newTeamArea.value),storesForArea(newTeamArea.value)[0]);};
+  document.querySelectorAll('[data-schedule-day]').forEach(b=>b.onclick=()=>{state.scheduleDayFilter=b.dataset.scheduleDay;render();});
+  const showAllWeek=document.getElementById('showAllWeek');
+  if(showAllWeek) showAllWeek.onclick=()=>{state.scheduleDayFilter=null;render();};
+  const scheduleAreaFilter=document.getElementById('scheduleAreaFilter');
+  if(scheduleAreaFilter) scheduleAreaFilter.onchange=()=>{
+    state.scheduleAreaFilter=scheduleAreaFilter.value;
+    state.scheduleStoreFilter=storesForArea(scheduleAreaFilter.value)[0];
+    render();
+  };
+  const scheduleStoreFilter=document.getElementById('scheduleStoreFilter');
+  if(scheduleStoreFilter) scheduleStoreFilter.onchange=()=>{state.scheduleStoreFilter=scheduleStoreFilter.value;render();};
+  const requestAreaFilter=document.getElementById('requestAreaFilter');
+  if(requestAreaFilter) requestAreaFilter.onchange=()=>{
+    state.requestAreaFilter=requestAreaFilter.value;
+    state.requestStoreFilter='All stores';
+    render();
+  };
+  const requestStoreFilter=document.getElementById('requestStoreFilter');
+  if(requestStoreFilter) requestStoreFilter.onchange=()=>{state.requestStoreFilter=requestStoreFilter.value;render();};
+  const payoutAreaFilter=document.getElementById('payoutAreaFilter');
+  if(payoutAreaFilter) payoutAreaFilter.onchange=()=>{
+    state.payoutAreaFilter=payoutAreaFilter.value;
+    state.payoutStoreFilter='All stores';
+    render();
+  };
+  const payoutStoreFilter=document.getElementById('payoutStoreFilter');
+  if(payoutStoreFilter) payoutStoreFilter.onchange=()=>{state.payoutStoreFilter=payoutStoreFilter.value;render();};
+  const catalogAreaFilter=document.getElementById('catalogAreaFilter');
+  if(catalogAreaFilter) catalogAreaFilter.onchange=()=>{
+    state.catalogAreaFilter=catalogAreaFilter.value;
+    state.catalogStoreFilter='All stores';
+    state.cart={};
+    render();
+  };
+  const catalogStoreFilter=document.getElementById('catalogStoreFilter');
+  if(catalogStoreFilter) catalogStoreFilter.onchange=()=>{state.catalogStoreFilter=catalogStoreFilter.value;state.cart={};render();};
+  const openCatalogComposer=document.getElementById('openCatalogComposer');
+  if(openCatalogComposer) openCatalogComposer.onclick=()=>{state.catalogComposer=true;render();};
+  const closeCatalogComposer=document.getElementById('closeCatalogComposer');
+  if(closeCatalogComposer) closeCatalogComposer.onclick=()=>{state.catalogComposer=false;render();};
+  const newItemArea=document.getElementById('newItemArea');
+  if(newItemArea) newItemArea.onchange=()=>{
+    document.getElementById('newItemStore').innerHTML=locationOptions(storesForArea(newItemArea.value),storesForArea(newItemArea.value)[0]);
+  };
+  const openPayoutComposer=document.getElementById('openPayoutComposer');
+  if(openPayoutComposer) openPayoutComposer.onclick=()=>{state.payoutComposer=true;render();};
+  const closePayoutComposer=document.getElementById('closePayoutComposer');
+  if(closePayoutComposer) closePayoutComposer.onclick=()=>{state.payoutComposer=false;render();};
+  const newPayoutArea=document.getElementById('newPayoutArea');
+  if(newPayoutArea) newPayoutArea.onchange=()=>{
+    document.getElementById('newPayoutStore').innerHTML=locationOptions(storesForArea(newPayoutArea.value),storesForArea(newPayoutArea.value)[0]);
+  };
+  const openRequestComposer=document.getElementById('openRequestComposer');
+  if(openRequestComposer) openRequestComposer.onclick=()=>{state.requestComposer=true;render();};
+  const closeRequestComposer=document.getElementById('closeRequestComposer');
+  if(closeRequestComposer) closeRequestComposer.onclick=()=>{state.requestComposer=false;render();};
+  document.querySelectorAll('input[name="reqAssignment"]').forEach(r=>r.onchange=()=>{
+    if(!r.checked)return;
+    const byStore=r.value==='Store';
+    document.getElementById('requestStoreField').style.display=byStore?'block':'none';
+    document.getElementById('requestAreaField').style.display=byStore?'none':'block';
+  });
+  const openShiftComposer=document.getElementById('openShiftComposer');
+  if(openShiftComposer) openShiftComposer.onclick=()=>{state.shiftComposer=true;render();};
+  const closeShiftComposer=document.getElementById('closeShiftComposer');
+  if(closeShiftComposer) closeShiftComposer.onclick=()=>{state.shiftComposer=false;render();};
+  const newShiftArea=document.getElementById('newShiftArea');
+  if(newShiftArea) newShiftArea.onchange=()=>{
+    document.getElementById('newShiftStore').innerHTML=locationOptions(storesForArea(newShiftArea.value),storesForArea(newShiftArea.value)[0]);
+  };
+  const openAnnComposer=document.getElementById('openAnnComposer');
+  if(openAnnComposer) openAnnComposer.onclick=()=>{state.announcementComposer=true;render();};
+  const closeAnnComposer=document.getElementById('closeAnnComposer');
+  if(closeAnnComposer) closeAnnComposer.onclick=()=>{state.announcementComposer=false;render();};
+  document.querySelectorAll('input[name="annAudience"]').forEach(r=>r.onchange=()=>{
+    const byStore=r.value==='Store'&&r.checked;
+    if(!r.checked)return;
+    document.getElementById('storeAudienceField').style.display=byStore?'block':'none';
+    document.getElementById('areaAudienceField').style.display=byStore?'none':'block';
+  });
+  const postAnn = document.getElementById('postAnnBtn');
+  if(postAnn) postAnn.onclick = async ()=>{
+    const text = document.getElementById('annText').value.trim();
+    if(!text){ showToast('Write something first'); return; }
+    const fileInput = document.getElementById('annFile');
+    const file = fileInput && fileInput.files && fileInput.files[0];
+    const audienceType=(document.querySelector('input[name="annAudience"]:checked')||{}).value||'Store';
+    const audienceValue=audienceType==='Store'?document.getElementById('annStore').value:document.getElementById('annArea').value;
+    const postIt = async (attachment)=>{
+      state.data.announcements.push({id:uid(), text, author:state.user.name, date:todayStr(), attachment:attachment||null, audienceType, audienceValue});
+      await sset(KEYS.announcements, state.data.announcements);
+      state.announcementComposer=false;
+      showToast('Announcement posted');
+      render();
+    };
+    if(file){
+      if(file.size > 2*1024*1024){ showToast('Image is too large, keep it under 2MB'); return; }
+      const reader = new FileReader();
+      reader.onload = ()=>postIt(reader.result);
+      reader.onerror = ()=>{ showToast('Could not read that file'); };
+      reader.readAsDataURL(file);
+    } else {
+      postIt(null);
+    }
+  };
+
+  const changePwd = document.getElementById('changePwdBtn');
+  if(changePwd) changePwd.onclick = async ()=>{
+    const curPwd = document.getElementById('curPwd').value;
+    const newPwd = document.getElementById('newPwd').value;
+    const confirmPwd = document.getElementById('confirmPwd').value;
+    if(!curPwd || !newPwd || !confirmPwd){ showToast('Fill out all three fields'); return; }
+    if(newPwd.length < 6){ showToast('New password should be at least 6 characters'); return; }
+    if(newPwd !== confirmPwd){ showToast("New passwords don't match"); return; }
+    const entry = state.data.roster.find(r=> r.phone && state.user.phone ? r.phone===state.user.phone : r.name===state.user.name);
+    if(!entry){ showToast('Could not find your account on the roster'); return; }
+    const curHash = await hashPassword(curPwd);
+    if(entry.password !== curHash){ showToast('Current password is incorrect'); return; }
+    entry.password = await hashPassword(newPwd);
+    await sset(KEYS.roster, state.data.roster);
+    showToast('Password updated');
+    render();
+  };
+
+  document.querySelectorAll('[data-inc]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.inc; state.cart[id]=(state.cart[id]||0)+1; render();
+  });
+  document.querySelectorAll('[data-dec]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.dec; state.cart[id]=Math.max(0,(state.cart[id]||0)-1); render();
+  });
+
+  const submitOrder = document.getElementById('submitOrderBtn');
+  if(submitOrder) submitOrder.onclick = async ()=>{
+    const cat = state.data.catalog;
+    const items = Object.entries(state.cart).filter(([id,qty])=>qty>0).map(([id,qty])=>{
+      const item = cat.find(c=>c.id===id);
+      return {name:item.name, qty, price:item.price, area:item.area||'Central Area', store:item.store||'Metro Downtown'};
+    });
+    const total = items.reduce((s,i)=>s+i.price*i.qty,0);
+    state.data.orders.push({id:uid(), employee:state.user.name, items, total, area:items[0].area, store:items[0].store, status:'pending', date:todayStr()});
+    await sset(KEYS.orders, state.data.orders);
+    state.cart = {};
+    showToast('Order submitted');
+    render();
+  };
+
+  const addItem = document.getElementById('addItemBtn');
+  if(addItem) addItem.onclick = async ()=>{
+    const name = document.getElementById('newItemName').value.trim();
+    const price = parseFloat(document.getElementById('newItemPrice').value);
+    const category = document.getElementById('newItemCat').value.trim() || 'General';
+    const area = document.getElementById('newItemArea').value;
+    const store = document.getElementById('newItemStore').value;
+    if(!name || isNaN(price)){ showToast('Enter a name and price'); return; }
+    state.data.catalog.push({id:uid(), name, price, category, area, store});
+    await sset(KEYS.catalog, state.data.catalog);
+    state.catalogComposer=false;
+    showToast('Item added');
+    render();
+  };
+
+  document.querySelectorAll('[data-fulfill]').forEach(b=>b.onclick=async ()=>{
+    const o = state.data.orders.find(x=>x.id===b.dataset.fulfill);
+    if(o){ o.status='approved'; await sset(KEYS.orders, state.data.orders); render(); }
+  });
+
+  const addPayout = document.getElementById('addPayoutBtn');
+  if(addPayout) addPayout.onclick = async ()=>{
+    const area = document.getElementById('newPayoutArea').value;
+    const store = document.getElementById('newPayoutStore').value;
+    const type = document.getElementById('payoutType').value;
+    const amount = parseFloat(document.getElementById('payoutAmount').value);
+    const note = document.getElementById('payoutNote').value.trim();
+    const employee = isAdmin() ? (document.getElementById('payoutEmployee').value.trim()||state.user.name) : state.user.name;
+    if(isNaN(amount)){ showToast('Enter an amount'); return; }
+    state.data.payouts.push({id:uid(), employee, area, store, type, amount, note, status:'pending', date:todayStr()});
+    await sset(KEYS.payouts, state.data.payouts);
+    state.payoutComposer=false;
+    showToast('Payout logged');
+    render();
+  };
+
+  document.querySelectorAll('[data-paid]').forEach(b=>b.onclick=async ()=>{
+    const p = state.data.payouts.find(x=>x.id===b.dataset.paid);
+    if(p){ p.status='paid'; await sset(KEYS.payouts, state.data.payouts); render(); }
+  });
+
+  const addShift = document.getElementById('addShiftBtn');
+  if(addShift) addShift.onclick = async ()=>{
+    const area = document.getElementById('newShiftArea').value;
+    const store = document.getElementById('newShiftStore').value;
+    const employee = document.getElementById('shiftEmployee').value.trim();
+    const day = document.getElementById('shiftDay').value;
+    const start = document.getElementById('shiftStart').value;
+    const end = document.getElementById('shiftEnd').value;
+    if(!employee||!day||!start||!end){ showToast('Fill out all shift fields'); return; }
+    state.data.schedule.push({id:uid(), employee, area, store, day, start, end});
+    await sset(KEYS.schedule, state.data.schedule);
+    state.shiftComposer=false;
+    showToast('Shift published');
+    render();
+  };
+
+  document.querySelectorAll('[data-removeshift]').forEach(b=>b.onclick=async ()=>{
+    state.data.schedule = state.data.schedule.filter(s=>s.id!==b.dataset.removeshift);
+    await sset(KEYS.schedule, state.data.schedule);
+    render();
+  });
+
+  const sendMemberInvite=document.getElementById('sendMemberInviteBtn');
+  if(sendMemberInvite) sendMemberInvite.onclick=async()=>{
+    const name=document.getElementById('teamName').value.trim();
+    const email=document.getElementById('teamEmail').value.trim();
+    const phone=document.getElementById('teamPhone').value.trim();
+    const employeeId=document.getElementById('teamEmployeeId').value.trim();
+    const role=document.getElementById('teamRole').value;
+    const area=document.getElementById('newTeamArea').value;
+    const store=document.getElementById('newTeamStore').value;
+    if(!name||!email||!phone||!employeeId){showToast('Fill out name, email, phone, and employee ID');return;}
+    if(!/^\S+@\S+\.\S+$/.test(email)){showToast('Enter a valid email address');return;}
+    if(state.data.roster.find(r=>r.email&&r.email.toLowerCase()===email.toLowerCase())||state.data.inviteCodes.find(c=>!c.used&&c.email&&c.email.toLowerCase()===email.toLowerCase())){showToast('That email is already in use or invited');return;}
+    if(state.data.roster.find(r=>r.employeeId&&r.employeeId.toLowerCase()===employeeId.toLowerCase())){showToast('That employee ID is already in use');return;}
+    const code=genInviteCode(state.data.inviteCodes);
+    state.data.inviteCodes.push({code,name,email,phone,employeeId,role,area,store,createdBy:state.user.name,used:false});
+    await sset(KEYS.inviteCodes,state.data.inviteCodes);
+    state.teamComposer=false;
+    showToast(`Invite sent to ${email} · code ${code}`);
+    render();
+  };
+
+  document.querySelectorAll('[data-revokecode]').forEach(b=>b.onclick=async ()=>{
+    state.data.inviteCodes = state.data.inviteCodes.filter(c=>c.code!==b.dataset.revokecode);
+    await sset(KEYS.inviteCodes, state.data.inviteCodes);
+    showToast('Code revoked');
+    render();
+  });
+
+  const addTeam = document.getElementById('addTeamBtn');
+  if(addTeam) addTeam.onclick = async ()=>{
+    if(!isOwner()){ return; }
+    const name = document.getElementById('teamName').value.trim();
+    const employeeId = document.getElementById('teamEmployeeId').value.trim();
+    const phone = document.getElementById('teamPhone').value.trim();
+    const rawPassword = document.getElementById('teamPassword').value;
+    const role = document.getElementById('teamRole').value;
+    if(!name || !employeeId || !phone || !rawPassword){ showToast('Fill out name, employee ID, phone, and password'); return; }
+    if(rawPassword.length < 6){ showToast('Password should be at least 6 characters'); return; }
+    if(state.data.roster.find(r=>r.name.toLowerCase()===name.toLowerCase())){ showToast('Already on roster'); return; }
+    if(state.data.roster.find(r=>r.phone===phone)){ showToast('That phone number is already in use'); return; }
+    if(state.data.roster.find(r=>r.employeeId && r.employeeId.toLowerCase()===employeeId.toLowerCase())){ showToast('That employee ID is already in use'); return; }
+    const password = await hashPassword(rawPassword);
+    const entry = {name, employeeId, phone, password, role};
+    if(role==='Manager') entry.permissions = defaultPermissions();
+    state.data.roster.push(entry);
+    await sset(KEYS.roster, state.data.roster);
+    showToast('Added to roster');
+    render();
+  };
+
+  const submitReq = document.getElementById('submitReqBtn');
+  if(submitReq) submitReq.onclick = async ()=>{
+    const type = document.getElementById('reqType').value;
+    const details = document.getElementById('reqDetails').value.trim();
+    if(!details){ showToast('Describe what you need'); return; }
+    const assignmentType=(document.querySelector('input[name="reqAssignment"]:checked,input[name="reqAssignment"][type="hidden"]')||{}).value||'Store';
+    const assignmentValue=assignmentType==='Store'?document.getElementById('reqStore').value:document.getElementById('reqArea').value;
+    state.data.requests.push({id:uid(), employee:state.user.name, type, details, assignmentType, assignmentValue, status:'pending', date:todayStr()});
+    await sset(KEYS.requests, state.data.requests);
+    state.requestComposer=false;
+    showToast('Request submitted');
+    render();
+  };
+
+  document.querySelectorAll('[data-resolvereq]').forEach(b=>b.onclick=async ()=>{
+    const r = state.data.requests.find(x=>x.id===b.dataset.resolvereq);
+    if(r){ r.status='resolved'; await sset(KEYS.requests, state.data.requests); render(); }
+  });
+
+  document.querySelectorAll('[data-editroster]').forEach(b=>b.onclick=()=>{
+    const entry = state.data.roster.find(r=>r.name===b.dataset.editroster);
+    if(!entry) return;
+    if(entry.role==='Owner' && !isOwner()){ showToast('Only the owner can edit the owner account'); return; }
+    const fields = [{id:'name', label:'Employee name', type:'text', value:entry.name}];
+    if(entry.role!=='Owner'){
+      fields.push({id:'role', label:'Role', type:'select', options:['Employee','Manager'], value:entry.role});
+    }
+    if(isOwner()) fields.push({id:'area',label:'Area',type:'select',options:areaNames(),value:entry.area||'Central Area'});
+    fields.push({id:'store',label:'Store',type:'select',options:isOwner()?storeNamesForFilter('All areas'):storesForArea(roleScope().area),value:entry.store||roleScope().store});
+    state.teamDetailName=null;
+    state.teamMenuFor=null;
+    state.modal = { kind:'prompt', title:'Edit team member', fields, confirmLabel:'Save', action:'editRoster', context:{name:entry.name} };
+    render();
+  });
+
+  document.querySelectorAll('[data-editid]').forEach(b=>b.onclick=()=>{
+    const entry = state.data.roster.find(r=>r.name===b.dataset.editid);
+    if(!entry) return;
+    state.modal = {
+      kind:'prompt', title:'Edit employee ID',
+      fields:[{id:'newid', label:'Employee ID', type:'text', value:entry.employeeId||''}],
+      confirmLabel:'Save', action:'editId', context:{name:entry.name}
+    };
+    render();
+  });
+
+  document.querySelectorAll('[data-permfor]').forEach(b=>b.onclick=()=>{
+    state.permEditFor = state.permEditFor===b.dataset.permfor ? null : b.dataset.permfor;
+    render();
+  });
+
+  document.querySelectorAll('[data-savepermfor]').forEach(b=>b.onclick=async ()=>{
+    const entry = state.data.roster.find(r=>r.name===b.dataset.savepermfor);
+    if(!entry) return;
+    const perms = {};
+    PERMISSION_DEFS.forEach(d=>{
+      const cb = document.querySelector(`[data-permkey="${d.key}"]`);
+      perms[d.key] = cb ? cb.checked : true;
+    });
+    entry.permissions = perms;
+    await sset(KEYS.roster, state.data.roster);
+    state.permEditFor = null;
+    showToast('Access updated');
+    render();
+  });
+
+  document.querySelectorAll('[data-resetpw]').forEach(b=>b.onclick=()=>{
+    state.modal = {
+      kind:'prompt', title:`Reset password for ${b.dataset.resetpw}`,
+      fields:[{id:'newpw', label:'New password', type:'password', placeholder:'At least 6 characters'}],
+      confirmLabel:'Reset password', action:'resetPassword', context:{name:b.dataset.resetpw}
+    };
+    render();
+  });
+
+  document.querySelectorAll('[data-removeteam]').forEach(b=>b.onclick=async ()=>{
+    const target=state.data.roster.find(r=>r.name===b.dataset.removeteam);
+    if(!target||target.role==='Owner'){showToast('The owner account cannot be removed');return;}
+    state.data.roster = state.data.roster.filter(r=>r.name!==b.dataset.removeteam);
+    await sset(KEYS.roster, state.data.roster);
+    render();
+  });
+}
+
+init();
+</script>
+</body>
+</html>
